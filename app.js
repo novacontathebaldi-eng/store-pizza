@@ -1,975 +1,614 @@
-// Pizzaria Santa Sensação - Complete Application
+// Pizzaria Santa Sensação - App v2.0
 class PizzariaApp {
     constructor() {
-        // Firebase configuration
         this.firebaseConfig = {
             apiKey: "AIzaSyCTMHlUCGOpU7VRIdbP2VADzUF9n1lI88A",
             authDomain: "site-pizza-a2930.firebaseapp.com",
             projectId: "site-pizza-a2930",
-            storageBucket: "site-pizza-a2930.firebasestorage.app",
+            storageBucket: "site-pizza-a2930.appspot.com",
             messagingSenderId: "914255031241",
             appId: "1:914255031241:web:84ae273b22cb7d04499618"
         };
 
-        // App state
+        // Estado da Aplicação
+        this.isOpen = true;
         this.cart = [];
-        this.isOnline = true;
         this.currentUser = null;
-        this.currentCategory = 'pizzas-salgadas';
-        
-        // Data
-        this.produtos = {
-            "pizzas_salgadas": [
-                {
-                    "id": "margherita",
-                    "nome": "Pizza Margherita",
-                    "descricao": "Molho de tomate, mozzarella de búfala, manjericão fresco e azeite extravirgem",
-                    "precos": {"P": 32.00, "M": 42.00, "G": 48.00},
-                    "badge": "Vegetariana",
-                    "popular": true
-                },
-                {
-                    "id": "calabresa",
-                    "nome": "Calabresa Especial",
-                    "descricao": "Molho de tomate, calabresa artesanal, cebola roxa, azeitonas pretas e orégano",
-                    "precos": {"P": 35.00, "M": 45.00, "G": 52.00},
-                    "badge": "Popular"
-                },
-                {
-                    "id": "portuguesa",
-                    "nome": "Portuguesa Premium",
-                    "descricao": "Presunto parma, ovos caipira, ervilhas e azeitonas portuguesas",
-                    "precos": {"P": 42.00, "M": 52.00, "G": 58.00},
-                    "badge": "Premium"
-                },
-                {
-                    "id": "quatro-queijos",
-                    "nome": "4 Queijos Gourmet",
-                    "descricao": "Mozzarella, gorgonzola, parmesão reggiano e catupiry premium",
-                    "precos": {"P": 45.00, "M": 55.00, "G": 62.00},
-                    "badge": "Gourmet"
-                },
-                {
-                    "id": "napolitana",
-                    "nome": "Napolitana",
-                    "descricao": "Molho de tomate, mozzarella, tomate fresco, manjericão e orégano",
-                    "precos": {"P": 38.00, "M": 48.00, "G": 55.00}
-                },
-                {
-                    "id": "frango-catupiry",
-                    "nome": "Frango c/ Catupiry",
-                    "descricao": "Frango desfiado, catupiry, milho, azeitonas e orégano",
-                    "precos": {"P": 40.00, "M": 50.00, "G": 57.00}
-                }
-            ],
-            "pizzas_doces": [
-                {
-                    "id": "chocolate-morango",
-                    "nome": "Chocolate com Morango",
-                    "descricao": "Massa doce, nutella, morangos frescos, banana e açúcar de confeiteiro",
-                    "precos": {"P": 28.00, "M": 35.00, "G": 42.00},
-                    "badge": "Popular"
-                },
-                {
-                    "id": "banana-canela",
-                    "nome": "Banana c/ Canela",
-                    "descricao": "Massa doce, banana, canela, açúcar cristal e leite condensado",
-                    "precos": {"P": 25.00, "M": 32.00, "G": 38.00}
-                },
-                {
-                    "id": "romeu-julieta",
-                    "nome": "Romeu e Julieta",
-                    "descricao": "Queijo, goiabada, massa doce e açúcar de confeiteiro",
-                    "precos": {"P": 30.00, "M": 37.00, "G": 44.00}
-                }
-            ],
-            "bebidas": [
-                {
-                    "id": "coca-2l",
-                    "nome": "Coca-Cola 2L",
-                    "descricao": "Refrigerante Coca-Cola 2 litros gelado",
-                    "precos": {"Única": 8.00}
-                },
-                {
-                    "id": "guarana-2l",
-                    "nome": "Guaraná Antarctica 2L",
-                    "descricao": "Refrigerante Guaraná Antarctica 2 litros gelado",
-                    "precos": {"Única": 8.00}
-                },
-                {
-                    "id": "suco-natural",
-                    "nome": "Suco Natural 500ml",
-                    "descricao": "Suco natural de frutas da estação",
-                    "precos": {"Única": 6.00}
-                },
-                {
-                    "id": "agua",
-                    "nome": "Água 500ml",
-                    "descricao": "Água mineral sem gás",
-                    "precos": {"Única": 3.00}
-                }
-            ]
-        };
+        this.categories = [];
+        this.products = [];
+        this.currentCategory = null;
+        this.currentEditingId = null; // Para saber se estamos editando ou criando
 
         this.init();
     }
 
     async init() {
-        try {
-            console.log('Inicializando Santa Sensação...');
-            
-            // Initialize Firebase
-            await this.initFirebase();
-            
-            // Load saved data
-            this.loadCart();
-            this.loadPizzariaStatus();
-            
-            // Setup event listeners
-            this.setupEventListeners();
-            
-            // Load featured items on homepage
-            this.loadFeaturedItems();
-            
-            console.log('Aplicação inicializada com sucesso!');
-            
-        } catch (error) {
-            console.error('Erro ao inicializar:', error);
-        }
+        console.log("Iniciando Santa Sensação App v2.0...");
+        this.initFirebase();
+        this.loadCartFromStorage();
+        this.setupEventListeners();
+        this.listenToData(); // Ouvir em tempo real categorias, produtos e status
     }
 
-    async initFirebase() {
+    // 1. SETUP E EVENTOS
+    // =======================================
+
+    initFirebase() {
         try {
-            // Initialize Firebase
             firebase.initializeApp(this.firebaseConfig);
             this.db = firebase.firestore();
-            
-            console.log('Firebase inicializado com sucesso');
-            
+            this.auth = firebase.auth();
+            console.log("Firebase inicializado com sucesso!");
         } catch (error) {
-            console.error('Erro ao inicializar Firebase:', error);
+            console.error("Erro ao inicializar o Firebase:", error);
+            alert("Não foi possível conectar ao servidor. O site pode não funcionar corretamente.");
         }
     }
 
     setupEventListeners() {
-        // Smooth scrolling for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        // Navegação principal e rolagem suave
+        document.querySelectorAll('.nav-link, .logo, .btn[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', (e) => {
-                if (anchor.getAttribute('onclick')) return; // Skip if has onclick
-                
                 e.preventDefault();
-                const targetId = anchor.getAttribute('href').substring(1);
-                const targetElement = document.getElementById(targetId);
-                
+                const targetId = anchor.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
                 if (targetElement) {
-                    targetElement.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('main-nav').classList.remove('open');
+                    document.getElementById('mobile-toggle').classList.remove('open');
                 }
             });
         });
 
-        // Mobile menu toggle
-        const mobileToggle = document.getElementById('mobileMenuToggle');
-        if (mobileToggle) {
-            mobileToggle.addEventListener('click', () => {
-                const nav = document.getElementById('mainNav');
-                nav.classList.toggle('mobile-open');
-            });
-        }
-
-        // Admin login form
-        const adminLoginForm = document.getElementById('adminLoginForm');
-        if (adminLoginForm) {
-            adminLoginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleAdminLogin();
-            });
-        }
-
-        // Finalization form
-        const finalizationForm = document.getElementById('finalizationForm');
-        if (finalizationForm) {
-            finalizationForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleOrderFinalization();
-            });
-        }
-
-        // Category tabs in menu modal
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.category-tab')) {
-                this.switchCategory(e.target.dataset.category);
-            }
+        // Menu mobile (hamburger)
+        const mobileToggle = document.getElementById('mobile-toggle');
+        const mainNav = document.getElementById('main-nav');
+        mobileToggle.addEventListener('click', () => {
+            mobileToggle.classList.toggle('open');
+            mainNav.classList.toggle('open');
         });
 
-        // Admin tabs
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.admin-tab')) {
-                this.switchAdminTab(e.target.dataset.tab);
-            }
+        // Carrinho
+        document.getElementById('cart-btn').addEventListener('click', () => this.toggleCart(true));
+        document.getElementById('cart-close').addEventListener('click', () => this.toggleCart(false));
+        document.getElementById('cart-overlay').addEventListener('click', () => this.toggleCart(false));
+        document.getElementById('finish-order-btn').addEventListener('click', () => this.showOrderModal());
+
+        // Modal de Pedido
+        document.querySelector('#order-modal .close-modal').addEventListener('click', () => this.toggleModal('order-modal', false));
+        document.getElementById('order-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.sendWhatsAppOrder();
+        });
+        document.getElementById('payment-method').addEventListener('change', (e) => {
+            document.getElementById('change-group').classList.toggle('hidden', e.target.value !== 'Dinheiro');
+        });
+        document.getElementById('delivery-type').addEventListener('change', (e) => {
+            document.getElementById('address-group').classList.toggle('hidden', e.target.value !== 'delivery');
+        });
+
+
+        // Admin
+        document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); this.adminLogin(); });
+        document.getElementById('admin-logout').addEventListener('click', () => this.adminLogout());
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchAdminTab(btn.dataset.tab));
+        });
+        document.getElementById('pizzaria-status').addEventListener('change', (e) => this.updatePizzariaStatus(e.target.checked));
+
+        // Modais do Admin
+        this.setupAdminModals();
+    }
+    
+    // 2. CARREGAMENTO DE DADOS (REAL-TIME)
+    // =======================================
+
+    listenToData() {
+        // Ocultar loading screen quando os dados essenciais carregarem
+        const promises = [
+            this.listenToCategories(),
+            this.listenToProducts(),
+            this.listenToPizzariaStatus()
+        ];
+        Promise.all(promises).then(() => {
+            document.getElementById('loading-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
+        }).catch(err => {
+            console.error("Erro ao carregar dados iniciais:", err);
+            // Mesmo com erro, esconde o loading para não travar o usuário
+             document.getElementById('loading-screen').style.opacity = '0';
+             setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
         });
     }
 
-    loadFeaturedItems() {
-        const showcase = document.getElementById('menuShowcase');
-        if (!showcase) return;
+    listenToCategories() {
+        return new Promise((resolve) => {
+            this.db.collection('menu_categories').orderBy('order').onSnapshot(snapshot => {
+                this.categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                this.renderCategoryTabs();
+                console.log("Categorias carregadas:", this.categories.length);
+                resolve();
+            });
+        });
+    }
 
-        // Get featured items (first 4 pizzas salgadas)
-        const featuredItems = this.produtos.pizzas_salgadas.slice(0, 4);
+    listenToProducts() {
+        return new Promise((resolve) => {
+            this.db.collection('menu_items').orderBy('name').onSnapshot(snapshot => {
+                this.products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                this.renderMenuItems();
+                console.log("Produtos carregados:", this.products.length);
+                resolve();
+            });
+        });
+    }
+    
+    listenToPizzariaStatus() {
+        return new Promise((resolve) => {
+            this.db.doc('settings/pizzariaStatus').onSnapshot(doc => {
+                const status = doc.exists ? doc.data().online : true;
+                this.isOpen = status;
+                
+                const banner = document.getElementById('status-banner');
+                banner.classList.toggle('hidden', this.isOpen);
 
-        showcase.innerHTML = featuredItems.map(item => `
-            <div class="menu-card" data-pizza="${item.id}">
-                <div class="menu-card-image">
-                    <div class="image-placeholder">
-                        <i class="fas fa-pizza-slice"></i>
-                    </div>
-                    ${item.badge ? `<div class="menu-card-badge">${item.badge}</div>` : ''}
-                </div>
-                <div class="menu-card-content">
-                    <h3 class="menu-card-title">${item.nome}</h3>
-                    <p class="menu-card-description">${item.descricao}</p>
-                    <div class="menu-card-footer">
-                        <span class="menu-card-price">A partir de ${this.formatPrice(Math.min(...Object.values(item.precos)))}</span>
-                        <button class="menu-card-button" onclick="app.openMenuModal('${item.id}')">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+                document.querySelectorAll('.add-to-cart-btn').forEach(btn => btn.disabled = !this.isOpen);
+                document.getElementById('finish-order-btn').disabled = !this.isOpen || this.cart.length === 0;
+
+                // Admin
+                const statusCheckbox = document.getElementById('pizzaria-status');
+                const statusTextAdmin = document.getElementById('status-text-admin');
+                if (statusCheckbox) statusCheckbox.checked = this.isOpen;
+                if(statusTextAdmin) statusTextAdmin.textContent = this.isOpen ? 'Aberto' : 'Fechado';
+
+                console.log("Status da pizzaria:", this.isOpen ? "Aberta" : "Fechada");
+                resolve();
+            });
+        });
+    }
+
+    // 3. RENDERIZAÇÃO DO CARDÁPIO
+    // =======================================
+
+    renderCategoryTabs() {
+        const tabsContainer = document.getElementById('category-tabs');
+        if (!tabsContainer) return;
+        
+        tabsContainer.innerHTML = this.categories.map(cat => `
+            <button class="category-tab" data-category-id="${cat.id}">
+                ${cat.icon} ${cat.name}
+            </button>
         `).join('');
-    }
 
-    // Modal Management
-    openMenuModal(productId = null) {
-        const modal = document.getElementById('menuModal');
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        this.loadMenuItems();
-        
-        // If specific product, scroll to it after loading
-        if (productId) {
-            setTimeout(() => {
-                const productElement = document.querySelector(`[data-product-id="${productId}"]`);
-                if (productElement) {
-                    productElement.scrollIntoView({ behavior: 'smooth' });
-                }
-            }, 100);
-        }
-    }
-
-    closeMenuModal() {
-        const modal = document.getElementById('menuModal');
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-
-    openAdminModal() {
-        const modal = document.getElementById('adminModal');
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    closeAdminModal() {
-        const modal = document.getElementById('adminModal');
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-        
-        // Reset admin panel
-        this.showAdminLogin();
-    }
-
-    showFinalizationModal() {
-        if (this.cart.length === 0) {
-            alert('Seu carrinho está vazio!');
-            return;
+        // Define a primeira categoria como ativa se nenhuma estiver selecionada
+        if (!this.currentCategory && this.categories.length > 0) {
+            this.currentCategory = this.categories[0].id;
         }
 
-        if (!this.isOnline) {
-            alert('Desculpe, estamos fechados no momento.');
-            return;
-        }
-
-        const modal = document.getElementById('finalizationModal');
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        this.updateOrderSummary();
-    }
-
-    closeFinalizationModal() {
-        const modal = document.getElementById('finalizationModal');
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-
-    // Category Management
-    switchCategory(category) {
-        this.currentCategory = category;
-        
-        // Update active tab
         document.querySelectorAll('.category-tab').forEach(tab => {
-            tab.classList.remove('active');
-            if (tab.dataset.category === category) {
-                tab.classList.add('active');
-            }
+            tab.classList.toggle('active', tab.dataset.categoryId === this.currentCategory);
+            tab.addEventListener('click', () => {
+                this.currentCategory = tab.dataset.categoryId;
+                this.renderCategoryTabs(); // Re-render para atualizar a classe 'active'
+                this.renderMenuItems();
+            });
         });
-
-        this.loadMenuItems();
     }
 
-    loadMenuItems() {
-        const container = document.getElementById('menuItems');
-        if (!container) return;
+    renderMenuItems() {
+        const menuContainer = document.getElementById('menu-content');
+        if (!menuContainer) return;
 
-        const categoryKey = this.currentCategory.replace('-', '_');
-        const items = this.produtos[categoryKey] || [];
+        const filteredProducts = this.products.filter(p => p.categoryId === this.currentCategory);
 
-        if (items.length === 0) {
-            container.innerHTML = `
-                <div class="loading-spinner">
-                    <p>Nenhum item encontrado nesta categoria.</p>
-                </div>
-            `;
+        if (filteredProducts.length === 0) {
+            menuContainer.innerHTML = `<p>Nenhum produto nesta categoria.</p>`;
             return;
         }
 
-        container.innerHTML = `
-            <div class="menu-items-grid">
-                ${items.map(item => this.renderMenuItem(item)).join('')}
-            </div>
-        `;
-
-        this.setupMenuItemEvents();
-    }
-
-    renderMenuItem(item) {
-        const sizes = Object.keys(item.precos);
-        const hasMultipleSizes = sizes.length > 1;
-
-        return `
-            <div class="menu-item-modal" data-product-id="${item.id}">
-                <h4 class="menu-item-name">${item.nome}</h4>
-                <p class="menu-item-description">${item.descricao}</p>
-                
-                ${hasMultipleSizes ? `
-                    <div class="size-selector">
-                        ${sizes.map((size, index) => `
-                            <button class="size-option ${index === 0 ? 'active' : ''}" 
-                                    data-size="${size}" 
-                                    data-price="${item.precos[size]}">
-                                ${size} - ${this.formatPrice(item.precos[size])}
-                            </button>
-                        `).join('')}
-                    </div>
-                ` : `
-                    <div class="single-price" data-size="${sizes[0]}" data-price="${item.precos[sizes[0]]}">
-                        <strong>${this.formatPrice(item.precos[sizes[0]])}</strong>
-                    </div>
-                `}
-                
-                <button class="add-to-cart" data-product-id="${item.id}" ${!this.isOnline ? 'disabled' : ''}>
-                    <i class="fas fa-plus"></i>
-                    ${!this.isOnline ? 'Fechado' : 'Adicionar ao Carrinho'}
-                </button>
-            </div>
-        `;
-    }
-
-    setupMenuItemEvents() {
-        // Size selection
-        document.querySelectorAll('.size-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                const container = e.target.closest('.menu-item-modal');
-                container.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('active'));
-                e.target.classList.add('active');
-            });
-        });
-
-        // Add to cart
-        document.querySelectorAll('.add-to-cart').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                if (!this.isOnline) return;
-                
-                const productId = e.target.dataset.productId;
-                this.addToCart(productId);
-            });
-        });
-    }
-
-    // Cart Management
-    addToCart(productId) {
-        const productElement = document.querySelector(`[data-product-id="${productId}"]`);
-        if (!productElement) return;
-
-        // Find the product data
-        let product = null;
-        let categoryKey = null;
-        
-        for (const [key, items] of Object.entries(this.produtos)) {
-            const found = items.find(item => item.id === productId);
-            if (found) {
-                product = found;
-                categoryKey = key;
-                break;
-            }
-        }
-
-        if (!product) return;
-
-        // Get selected size and price
-        let selectedSize, selectedPrice;
-        const activeSize = productElement.querySelector('.size-option.active');
-        
-        if (activeSize) {
-            selectedSize = activeSize.dataset.size;
-            selectedPrice = parseFloat(activeSize.dataset.price);
-        } else {
-            const singlePrice = productElement.querySelector('.single-price');
-            if (singlePrice) {
-                selectedSize = singlePrice.dataset.size;
-                selectedPrice = parseFloat(singlePrice.dataset.price);
-            }
-        }
-
-        if (!selectedSize || !selectedPrice) return;
-
-        // Check if item already exists in cart
-        const existingItem = this.cart.find(item => 
-            item.productId === productId && item.size === selectedSize
-        );
-
-        if (existingItem) {
-            existingItem.quantity += 1;
-        } else {
-            this.cart.push({
-                productId,
-                name: product.nome,
-                size: selectedSize,
-                price: selectedPrice,
-                quantity: 1
-            });
-        }
-
-        this.saveCart();
-        this.updateCartUI();
-        
-        // Show feedback
-        this.showAddToCartFeedback();
-    }
-
-    showAddToCartFeedback() {
-        const cartBtn = document.getElementById('cartBtn');
-        cartBtn.style.transform = 'scale(1.2)';
-        setTimeout(() => {
-            cartBtn.style.transform = 'scale(1)';
-        }, 200);
-    }
-
-    updateCartUI() {
-        this.updateCartCount();
-        this.updateCartItems();
-        this.updateCartTotal();
-    }
-
-    updateCartCount() {
-        const countElement = document.getElementById('cartCount');
-        const totalItems = this.cart.reduce((sum, item) => sum + item.quantity, 0);
-        
-        if (countElement) {
-            countElement.textContent = totalItems;
-            countElement.classList.toggle('hidden', totalItems === 0);
-        }
-    }
-
-    updateCartItems() {
-        const emptyCart = document.getElementById('emptyCart');
-        const cartItems = document.getElementById('cartItems');
-        const cartFooter = document.getElementById('cartFooter');
-
-        if (this.cart.length === 0) {
-            emptyCart.style.display = 'block';
-            cartItems.style.display = 'none';
-            cartFooter.style.display = 'none';
-        } else {
-            emptyCart.style.display = 'none';
-            cartItems.style.display = 'block';
-            cartFooter.style.display = 'block';
-
-            cartItems.innerHTML = this.cart.map((item, index) => `
-                <div class="cart-item">
-                    <div class="cart-item-image">
-                        <i class="fas fa-pizza-slice"></i>
-                    </div>
-                    <div class="cart-item-details">
-                        <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-size">${item.size}</div>
-                        <div class="cart-item-controls">
-                            <button class="quantity-btn" onclick="app.updateCartQuantity(${index}, -1)">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <span class="quantity-display">${item.quantity}</span>
-                            <button class="quantity-btn" onclick="app.updateCartQuantity(${index}, 1)">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <div class="cart-item-price">${this.formatPrice(item.price * item.quantity)}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    }
-
-    updateCartQuantity(index, change) {
-        if (index < 0 || index >= this.cart.length) return;
-
-        this.cart[index].quantity += change;
-
-        if (this.cart[index].quantity <= 0) {
-            this.cart.splice(index, 1);
-        }
-
-        this.saveCart();
-        this.updateCartUI();
-        this.updateOrderSummary();
-    }
-
-    updateCartTotal() {
-        const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const cartTotal = document.getElementById('cartTotal');
-        
-        if (cartTotal) {
-            cartTotal.textContent = this.formatPrice(total);
-        }
-    }
-
-    toggleCart() {
-        const sidebar = document.getElementById('cartSidebar');
-        sidebar.classList.toggle('hidden');
-        
-        if (!sidebar.classList.contains('hidden')) {
-            document.body.style.overflow = 'hidden';
-            this.updateCartUI();
-        } else {
-            document.body.style.overflow = '';
-        }
-    }
-
-    closeCart() {
-        const sidebar = document.getElementById('cartSidebar');
-        sidebar.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-
-    // WhatsApp Integration
-    sendToWhatsApp() {
-        if (this.cart.length === 0) {
-            alert('Seu carrinho está vazio!');
-            return;
-        }
-
-        const message = this.generateSimpleWhatsAppMessage();
-        const whatsappUrl = `https://wa.me/5527996500341?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-        
-        alert('Redirecionando para o WhatsApp...');
-    }
-
-    generateSimpleWhatsAppMessage() {
-        let message = 'Olá, Santa Sensação! Gostaria de fazer o seguinte pedido:\n\n';
-        message += '*MEU PEDIDO:*\n';
-
-        this.cart.forEach(item => {
-            message += `- ${item.quantity}x ${item.name}`;
-            if (item.size !== 'Única') {
-                message += ` (${item.size})`;
-            }
-            message += '\n';
-        });
-
-        const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        message += `\n*Total: ${this.formatPrice(total)}*\n\n`;
-        message += 'Por favor, me informe sobre entrega!';
-
-        return message;
-    }
-
-    // Order Management
-    updateOrderSummary() {
-        const itemsContainer = document.getElementById('orderSummaryItems');
-        const totalContainer = document.getElementById('orderSummaryTotal');
-
-        if (itemsContainer) {
-            itemsContainer.innerHTML = this.cart.map(item => `
-                <div class="order-summary-item">
-                    <div>
-                        <strong>${item.quantity}x ${item.name}</strong>
-                        <br><small>${item.size}</small>
-                    </div>
-                    <div>${this.formatPrice(item.price * item.quantity)}</div>
-                </div>
-            `).join('');
-        }
-
-        if (totalContainer) {
-            const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            totalContainer.textContent = this.formatPrice(total);
-        }
-    }
-
-    handleOrderFinalization() {
-        const name = document.getElementById('customerName').value.trim();
-        const phone = document.getElementById('customerPhone').value.trim();
-        const address = document.getElementById('customerAddress').value.trim();
-        const notes = document.getElementById('orderNotes').value.trim();
-
-        if (!name || !phone || !address) {
-            alert('Por favor, preencha todos os campos obrigatórios.');
-            return;
-        }
-
-        // Generate WhatsApp message
-        const message = this.generateWhatsAppMessage(name, phone, address, notes);
-        
-        // Open WhatsApp
-        const whatsappUrl = `https://wa.me/5527996500341?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-
-        // Clear cart and close modals
-        this.cart = [];
-        this.saveCart();
-        this.updateCartUI();
-        this.closeFinalizationModal();
-        this.closeCart();
-
-        alert('Pedido enviado! Você será redirecionado para o WhatsApp.');
-    }
-
-    generateWhatsAppMessage(name, phone, address, notes) {
-        let message = 'Olá, Santa Sensação! Gostaria de fazer o seguinte pedido:\n\n';
-        message += '*MEU PEDIDO:*\n';
-
-        this.cart.forEach(item => {
-            message += `- ${item.quantity}x ${item.name}`;
-            if (item.size !== 'Única') {
-                message += ` (${item.size})`;
-            }
-            message += '\n';
-        });
-
-        const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        message += `\n*Total: ${this.formatPrice(total)}*\n\n`;
-
-        message += `*NOME:* ${name}\n`;
-        message += `*TELEFONE:* ${phone}\n`;
-        message += `*ENDEREÇO DE ENTREGA:* ${address}`;
-
-        if (notes) {
-            message += `\n*OBSERVAÇÕES:* ${notes}`;
-        }
-
-        return message;
-    }
-
-    // Admin Functions
-    handleAdminLogin() {
-        const email = document.getElementById('adminEmail').value;
-        const password = document.getElementById('adminPassword').value;
-        const errorDiv = document.getElementById('adminError');
-        const loadingDiv = document.getElementById('adminLoading');
-
-        // Show loading
-        loadingDiv.classList.remove('hidden');
-        errorDiv.classList.add('hidden');
-
-        // Simple validation for demo
-        setTimeout(() => {
-            if (email === 'admin@santa.com' && password === 'admin123') {
-                this.currentUser = { email, role: 'admin' };
-                this.showAdminPanel();
-                loadingDiv.classList.add('hidden');
-            } else {
-                errorDiv.textContent = 'Email ou senha incorretos.';
-                errorDiv.classList.remove('hidden');
-                loadingDiv.classList.add('hidden');
-            }
-        }, 1000);
-    }
-
-    showAdminPanel() {
-        document.getElementById('adminLogin').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-        this.switchAdminTab('status');
-    }
-
-    showAdminLogin() {
-        document.getElementById('adminLogin').classList.remove('hidden');
-        document.getElementById('adminPanel').classList.add('hidden');
-        this.currentUser = null;
-        
-        // Clear form
-        const form = document.getElementById('adminLoginForm');
-        if (form) {
-            form.reset();
-            // Set default values
-            document.getElementById('adminEmail').value = 'admin@santa.com';
-            document.getElementById('adminPassword').value = 'admin123';
-        }
-        
-        // Hide error/loading messages
-        document.getElementById('adminError').classList.add('hidden');
-        document.getElementById('adminLoading').classList.add('hidden');
-    }
-
-    logoutAdmin() {
-        this.showAdminLogin();
-        this.closeAdminModal();
-    }
-
-    switchAdminTab(tab) {
-        // Update tab buttons
-        document.querySelectorAll('.admin-tab').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.tab === tab) {
-                btn.classList.add('active');
-            }
-        });
-
-        // Show tab content
-        document.querySelectorAll('.admin-content').forEach(content => {
-            content.classList.remove('active');
-        });
-
-        const targetContent = document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-
-        // Load tab-specific data
-        if (tab === 'products') {
-            this.loadAdminProducts();
-        } else if (tab === 'categories') {
-            this.loadAdminCategories();
-        }
-    }
-
-    togglePizzariaStatus(isOpen) {
-        this.isOnline = isOpen;
-        this.savePizzariaStatus();
-        this.updateStatusUI();
-    }
-
-    updateStatusUI() {
-        const statusText = document.getElementById('statusText');
-        const statusBanner = document.getElementById('statusBanner');
-        const statusCheckbox = document.getElementById('pizzariaStatus');
-
-        if (statusText) {
-            statusText.textContent = this.isOnline ? 'Aberto' : 'Fechado';
-            statusText.style.color = this.isOnline ? '#25D366' : '#C0152F';
-        }
-
-        if (statusBanner) {
-            statusBanner.classList.toggle('hidden', this.isOnline);
-        }
-
-        if (statusCheckbox) {
-            statusCheckbox.checked = this.isOnline;
-        }
-
-        // Update cart finish button
-        const finishBtn = document.getElementById('finishOrder');
-        if (finishBtn) {
-            finishBtn.disabled = !this.isOnline;
-            if (!this.isOnline) {
-                finishBtn.innerHTML = '<i class="fas fa-clock"></i> Fechado';
-            } else {
-                finishBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Finalizar no WhatsApp';
-            }
-        }
-
-        // Update add to cart buttons
-        document.querySelectorAll('.add-to-cart').forEach(btn => {
-            btn.disabled = !this.isOnline;
-            if (!this.isOnline) {
-                btn.innerHTML = '<i class="fas fa-clock"></i> Fechado';
-            } else {
-                btn.innerHTML = '<i class="fas fa-plus"></i> Adicionar ao Carrinho';
-            }
-        });
-    }
-
-    loadAdminProducts() {
-        const container = document.getElementById('productsList');
-        if (!container) return;
-
-        let allProducts = [];
-        Object.entries(this.produtos).forEach(([category, products]) => {
-            products.forEach(product => {
-                allProducts.push({
-                    ...product,
-                    category: category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                });
-            });
-        });
-
-        container.innerHTML = allProducts.map(product => {
-            const priceText = Object.entries(product.precos)
-                .map(([size, price]) => `${size}: ${this.formatPrice(price)}`)
-                .join(', ');
+        menuContainer.innerHTML = filteredProducts.map(product => {
+            const priceEntries = Object.entries(product.prices);
+            const hasMultipleSizes = priceEntries.length > 1;
+            const firstPrice = this.formatPrice(priceEntries[0][1]);
 
             return `
-                <div class="admin-item">
-                    <div class="admin-item-info">
-                        <h5>${product.nome}</h5>
-                        <p>Categoria: ${product.category}</p>
-                        <p>Preços: ${priceText}</p>
-                    </div>
-                    <div class="admin-item-actions">
-                        <button class="btn btn--sm btn-edit" onclick="app.editProduct('${product.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn--sm btn-delete" onclick="app.deleteProduct('${product.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                <div class="menu-item">
+                    <img src="${product.imageUrl || 'assets/pizza-placeholder.webp'}" alt="${product.name}" class="menu-item-image">
+                    <div class="menu-item-content">
+                        <h3 class="menu-item-name">${product.name}</h3>
+                        <p class="menu-item-description">${product.description}</p>
+                        
+                        ${hasMultipleSizes ? `
+                            <div class="size-selector" data-product-id="${product.id}">
+                                ${priceEntries.map(([size, price], index) => `
+                                    <button class="size-option ${index === 0 ? 'active' : ''}" data-size="${size}" data-price="${price}">
+                                        ${size}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div class="menu-item-footer">
+                            <span class="menu-item-price">${hasMultipleSizes ? `a partir de ${firstPrice}` : firstPrice}</span>
+                            <button class="btn btn--primary add-to-cart-btn" data-product-id="${product.id}" ${!this.isOpen ? 'disabled' : ''}>
+                                ${this.isOpen ? 'Adicionar' : 'Fechado'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        // Adicionar eventos após renderizar
+        this.setupMenuItemEvents();
     }
 
-    loadAdminCategories() {
-        const container = document.getElementById('categoriesList');
-        if (!container) return;
+    setupMenuItemEvents() {
+        document.querySelectorAll('.size-selector .size-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const selector = e.target.closest('.size-selector');
+                selector.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('active'));
+                e.target.classList.add('active');
+            });
+        });
 
-        const categories = [
-            { id: 'pizzas-salgadas', name: 'Pizzas Salgadas', icon: '🍕', products: this.produtos.pizzas_salgadas.length },
-            { id: 'pizzas-doces', name: 'Pizzas Doces', icon: '🍰', products: this.produtos.pizzas_doces.length },
-            { id: 'bebidas', name: 'Bebidas', icon: '🥤', products: this.produtos.bebidas.length }
-        ];
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.addToCart(btn.dataset.productId));
+        });
+    }
 
-        container.innerHTML = categories.map(category => `
-            <div class="admin-item">
-                <div class="admin-item-info">
-                    <h5>${category.icon} ${category.name}</h5>
-                    <p>${category.products} produtos</p>
-                </div>
-                <div class="admin-item-actions">
-                    <button class="btn btn--sm btn-edit" onclick="app.editCategory('${category.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
+    // 4. FUNCIONALIDADES DO CARRINHO
+    // =======================================
+
+    addToCart(productId) {
+        const product = this.products.find(p => p.id === productId);
+        if (!product || !this.isOpen) return;
+        
+        let selectedSize, selectedPrice;
+        const sizeSelector = document.querySelector(`.size-selector[data-product-id="${productId}"]`);
+
+        if (sizeSelector) {
+            const activeOption = sizeSelector.querySelector('.size-option.active');
+            selectedSize = activeOption.dataset.size;
+            selectedPrice = parseFloat(activeOption.dataset.price);
+        } else {
+            const priceEntry = Object.entries(product.prices)[0];
+            selectedSize = priceEntry[0];
+            selectedPrice = parseFloat(priceEntry[1]);
+        }
+
+        const cartItem = {
+            id: `${productId}_${selectedSize}`,
+            productId,
+            name: product.name,
+            size: selectedSize,
+            price: selectedPrice,
+            quantity: 1,
+            imageUrl: product.imageUrl,
+        };
+        
+        const existingItem = this.cart.find(item => item.id === cartItem.id);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            this.cart.push(cartItem);
+        }
+        
+        this.updateCart();
+        this.toggleCart(true);
+    }
+    
+    updateCartQuantity(itemId, change) {
+        const item = this.cart.find(i => i.id === itemId);
+        if (item) {
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                this.cart = this.cart.filter(i => i.id !== itemId);
+            }
+        }
+        this.updateCart();
+    }
+    
+    updateCart() {
+        this.saveCartToStorage();
+        this.renderCartItems();
+        
+        const totalItems = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartCount = document.getElementById('cart-count');
+        cartCount.textContent = totalItems;
+        cartCount.classList.toggle('hidden', totalItems === 0);
+
+        const totalPrice = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        document.getElementById('cart-total-price').textContent = this.formatPrice(totalPrice);
+        
+        document.getElementById('finish-order-btn').disabled = this.cart.length === 0 || !this.isOpen;
+    }
+
+    renderCartItems() {
+        const cartBody = document.getElementById('cart-items');
+        if (this.cart.length === 0) {
+            cartBody.innerHTML = `<p class="cart-empty">Seu carrinho está vazio.</p>`;
+            return;
+        }
+
+        cartBody.innerHTML = this.cart.map(item => `
+            <div class="cart-item">
+                <img src="${item.imageUrl || 'assets/pizza-placeholder.webp'}" alt="${item.name}" class="cart-item-image">
+                <div class="cart-item-details">
+                    <h4>${item.name} <small>(${item.size})</small></h4>
+                    <p class="cart-item-price">${this.formatPrice(item.price)}</p>
+                    <div class="cart-item-controls">
+                        <button class="quantity-btn" onclick="app.updateCartQuantity('${item.id}', -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="quantity-btn" onclick="app.updateCartQuantity('${item.id}', 1)">+</button>
+                        <button class="icon-btn remove-item-btn" onclick="app.updateCartQuantity('${item.id}', -Infinity)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `).join('');
     }
 
-    // Placeholder functions for admin actions
-    showProductForm() {
-        alert('Funcionalidade de adicionar produto será implementada em breve.');
+    toggleCart(open) {
+        const sidebar = document.getElementById('cart-sidebar');
+        if (open) {
+            sidebar.classList.add('open');
+            this.updateCart(); // Garante que o carrinho está atualizado ao abrir
+        } else {
+            sidebar.classList.remove('open');
+        }
+    }
+    
+    saveCartToStorage() {
+        localStorage.setItem('santaSensacaoCart', JSON.stringify(this.cart));
     }
 
-    showCategoryForm() {
-        alert('Funcionalidade de adicionar categoria será implementada em breve.');
+    loadCartFromStorage() {
+        const savedCart = localStorage.getItem('santaSensacaoCart');
+        if (savedCart) {
+            this.cart = JSON.parse(savedCart);
+            this.updateCart();
+        }
+    }
+    
+    // 5. FINALIZAÇÃO DO PEDIDO
+    // =======================================
+
+    showOrderModal() {
+        if (this.cart.length === 0) return;
+        this.toggleModal('order-modal', true);
+
+        const summaryContainer = document.getElementById('modal-order-summary');
+        const totalPrice = this.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+        summaryContainer.innerHTML = `
+            ${this.cart.map(item => `
+                <div class="summary-item">
+                    <span>${item.quantity}x ${item.name} (${item.size})</span>
+                    <strong>${this.formatPrice(item.price * item.quantity)}</strong>
+                </div>
+            `).join('')}
+            <hr>
+            <div class="summary-item">
+                <strong>Total</strong>
+                <strong>${this.formatPrice(totalPrice)}</strong>
+            </div>
+        `;
     }
 
-    editProduct(productId) {
-        alert(`Editar produto: ${productId}`);
+    sendWhatsAppOrder() {
+        const name = document.getElementById('customer-name').value;
+        const deliveryType = document.getElementById('delivery-type').value;
+        const address = document.getElementById('customer-address').value;
+        const paymentMethod = document.getElementById('payment-method').value;
+        const changeFor = document.getElementById('change-for').value;
+
+        let orderText = `*Olá, Santa Sensação! Gostaria de fazer um pedido.*\n\n`;
+        orderText += `*Cliente:* ${name}\n`;
+        orderText += `*Entrega:* ${deliveryType === 'delivery' ? 'Delivery' : 'Retirar no balcão'}\n`;
+        if (deliveryType === 'delivery') {
+            orderText += `*Endereço:* ${address}\n`;
+        }
+        orderText += '\n*--- MEU PEDIDO ---*\n';
+
+        this.cart.forEach(item => {
+            orderText += `▪️ ${item.quantity}x ${item.name} (${item.size})\n`;
+        });
+        
+        const totalPrice = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        orderText += `\n*Total:* ${this.formatPrice(totalPrice)}\n`;
+        orderText += `*Pagamento:* ${paymentMethod}\n`;
+
+        if (paymentMethod === 'Dinheiro' && changeFor) {
+            const troco = parseFloat(changeFor) - totalPrice;
+            orderText += `*Troco para:* ${this.formatPrice(changeFor)} (Levar ${this.formatPrice(troco)} de troco)\n`;
+        }
+
+        const whatsappUrl = `https://wa.me/5527996500341?text=${encodeURIComponent(orderText)}`;
+        window.open(whatsappUrl, '_blank');
+
+        this.cart = [];
+        this.updateCart();
+        this.toggleModal('order-modal', false);
+        this.toggleCart(false);
     }
 
-    deleteProduct(productId) {
-        if (confirm('Tem certeza que deseja excluir este produto?')) {
-            alert(`Produto ${productId} excluído.`);
+    // 6. PAINEL DE ADMINISTRADOR
+    // =======================================
+    setupAdminModals() {
+        // Fechar modais
+        document.querySelectorAll('.modal-wrapper .close-modal, .modal-wrapper .btn--outline').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('.modal-wrapper').classList.add('hidden');
+            });
+        });
+
+        // Categoria
+        document.getElementById('add-category-btn').addEventListener('click', () => this.showCategoryModal());
+        document.getElementById('category-form').addEventListener('submit', (e) => { e.preventDefault(); this.saveCategory(); });
+        
+        // Produto
+        document.getElementById('add-product-btn').addEventListener('click', () => this.showProductModal());
+        document.getElementById('product-form').addEventListener('submit', (e) => { e.preventDefault(); this.saveProduct(); });
+    }
+
+    // ... (restante das funções do admin: login, logout, tabs, etc.)
+    async adminLogin() {
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+        const errorDiv = document.getElementById('login-error');
+        try {
+            errorDiv.classList.add('hidden');
+            await this.auth.signInWithEmailAndPassword(email, password);
+        } catch (error) {
+            errorDiv.textContent = "Email ou senha inválidos.";
+            errorDiv.classList.remove('hidden');
+            console.error("Erro de login:", error);
         }
     }
 
-    editCategory(categoryId) {
-        alert(`Editar categoria: ${categoryId}`);
+    adminLogout() {
+        this.auth.signOut();
+    }
+    
+    switchAdminTab(tab) {
+        document.querySelectorAll('.admin-tab-btn, .admin-tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`).classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        
+        if (tab === 'categories') this.renderAdminCategories();
+        if (tab === 'products') this.renderAdminProducts();
+    }
+    
+    // ... (Funções de CRUD para Categorias e Produtos)
+    showCategoryModal(category = null) {
+        this.currentEditingId = category ? category.id : null;
+        const form = document.getElementById('category-form');
+        form.reset();
+        
+        document.getElementById('category-modal-title').textContent = category ? 'Editar Categoria' : 'Nova Categoria';
+        if (category) {
+            document.getElementById('category-id').value = category.id;
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-icon').value = category.icon;
+            document.getElementById('category-order').value = category.order;
+        }
+        this.toggleModal('category-modal', true);
+    }
+    
+    async saveCategory() {
+        const id = this.currentEditingId;
+        const categoryData = {
+            name: document.getElementById('category-name').value,
+            icon: document.getElementById('category-icon').value,
+            order: parseInt(document.getElementById('category-order').value)
+        };
+        
+        if (id) {
+            await this.db.collection('menu_categories').doc(id).update(categoryData);
+        } else {
+            await this.db.collection('menu_categories').add(categoryData);
+        }
+        this.toggleModal('category-modal', false);
+    }
+    
+    async deleteCategory(id) {
+        if (confirm("Tem certeza que deseja excluir esta categoria?")) {
+            await this.db.collection('menu_categories').doc(id).delete();
+        }
+    }
+    
+    showProductModal(product = null) {
+        this.currentEditingId = product ? product.id : null;
+        const form = document.getElementById('product-form');
+        form.reset();
+
+        const categorySelect = document.getElementById('product-category');
+        categorySelect.innerHTML = this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        
+        document.getElementById('product-modal-title').textContent = product ? 'Editar Produto' : 'Novo Produto';
+        if (product) {
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-description').value = product.description;
+            categorySelect.value = product.categoryId;
+            document.getElementById('product-image').value = product.imageUrl || '';
+            Object.entries(product.prices).forEach(([size, price]) => {
+                const inputId = `price-${size.toLowerCase().charAt(0)}`;
+                if(document.getElementById(inputId)) document.getElementById(inputId).value = price;
+            });
+        }
+        this.toggleModal('product-modal', true);
+    }
+    
+    async saveProduct() {
+        const id = this.currentEditingId;
+        const prices = {};
+        if (document.getElementById('price-p').value) prices.P = parseFloat(document.getElementById('price-p').value);
+        if (document.getElementById('price-m').value) prices.M = parseFloat(document.getElementById('price-m').value);
+        if (document.getElementById('price-g').value) prices.G = parseFloat(document.getElementById('price-g').value);
+        if (document.getElementById('price-u').value) prices['Única'] = parseFloat(document.getElementById('price-u').value);
+
+        const productData = {
+            name: document.getElementById('product-name').value,
+            description: document.getElementById('product-description').value,
+            categoryId: document.getElementById('product-category').value,
+            imageUrl: document.getElementById('product-image').value,
+            prices: prices
+        };
+
+        if (id) {
+            await this.db.collection('menu_items').doc(id).update(productData);
+        } else {
+            await this.db.collection('menu_items').add(productData);
+        }
+        this.toggleModal('product-modal', false);
     }
 
-    // Utility Functions
+    async deleteProduct(id) {
+        if (confirm("Tem certeza que deseja excluir este produto?")) {
+            await this.db.collection('menu_items').doc(id).delete();
+        }
+    }
+
+    renderAdminCategories() {
+        const container = document.getElementById('categories-list');
+        container.innerHTML = this.categories.map(cat => `
+            <div class="admin-item">
+                <span>${cat.icon} ${cat.name} (Ordem: ${cat.order})</span>
+                <div class="admin-item-actions">
+                    <button class="icon-btn" onclick="app.showCategoryModal(${JSON.stringify(cat).replace(/"/g, "'")})"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn" onclick="app.deleteCategory('${cat.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    renderAdminProducts() {
+        const container = document.getElementById('products-list');
+        container.innerHTML = this.products.map(prod => `
+             <div class="admin-item">
+                <span>${prod.name}</span>
+                <div class="admin-item-actions">
+                    <button class="icon-btn" onclick="app.showProductModal(${JSON.stringify(prod).replace(/"/g, "'")})"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn" onclick="app.deleteProduct('${prod.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 7. FUNÇÕES UTILITÁRIAS
+    // =======================================
     formatPrice(price) {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(price);
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
     }
 
-    // Storage Functions
-    saveCart() {
-        localStorage.setItem('santa_sensacao_cart', JSON.stringify(this.cart));
-    }
-
-    loadCart() {
-        const saved = localStorage.getItem('santa_sensacao_cart');
-        if (saved) {
-            try {
-                this.cart = JSON.parse(saved);
-                this.updateCartUI();
-            } catch (error) {
-                console.error('Erro ao carregar carrinho:', error);
-                this.cart = [];
-            }
-        }
-    }
-
-    savePizzariaStatus() {
-        localStorage.setItem('santa_sensacao_status', JSON.stringify(this.isOnline));
-    }
-
-    loadPizzariaStatus() {
-        const saved = localStorage.getItem('santa_sensacao_status');
-        if (saved !== null) {
-            try {
-                this.isOnline = JSON.parse(saved);
-            } catch (error) {
-                console.error('Erro ao carregar status:', error);
-                this.isOnline = true;
-            }
-        }
-        this.updateStatusUI();
+    toggleModal(modalId, show) {
+        document.getElementById(modalId).classList.toggle('hidden', !show);
     }
 }
 
-// Initialize app when DOM is loaded
+// Inicializar a aplicação quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new PizzariaApp();
-});
-
-// Close modals when clicking outside
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        e.target.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-});
-
-// Close cart when clicking outside
-document.addEventListener('click', (e) => {
-    const cartSidebar = document.getElementById('cartSidebar');
-    const cartBtn = document.getElementById('cartBtn');
-    
-    if (cartSidebar && !cartSidebar.classList.contains('hidden')) {
-        if (!cartSidebar.contains(e.target) && !cartBtn.contains(e.target)) {
-            window.app.closeCart();
-        }
-    }
-});
-
-// Handle escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        // Close any open modals
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.add('hidden');
-        });
-        
-        // Close cart
-        if (window.app) {
-            window.app.closeCart();
-        }
-        
-        document.body.style.overflow = '';
-    }
 });
