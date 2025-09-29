@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa Sensação - A Pizza Nº1 do ES</title>
+    <title>Pizzaria Santa Sensação - A pizza nº 1 do ES</title>
+    <meta name="description" content="Pizzaria Santa Sensação - Experiência que vai além do sabor. A pizza nº 1 do Espírito Santo.">
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-spinner">
-            <div class="pizza-loading">🍕</div>
-            <p>Carregando cardápio...</p>
-        </div>
-    </div>
-
     <!-- Status Banner -->
-    <div id="status-banner" class="status-banner hidden">
+    <div id="statusBanner" class="status-banner hidden">
         <div class="container">
             <div class="status-content">
                 <i class="fas fa-times-circle"></i>
@@ -26,464 +22,482 @@
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="header">
+    <!-- Navigation Header -->
+    <header class="header" id="header">
         <div class="container">
             <div class="header-content">
-                <div class="logo">
-                    <h1>🍕 Santa Sensação</h1>
-                    <p>A Pizza Nº1 do ES</p>
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-pizza-slice"></i>
+                        <span class="logo-text">Santa Sensação</span>
+                    </div>
                 </div>
-                <nav class="nav">
-                    <a href="#home" class="nav-link active" data-page="home">Início</a>
-                    <a href="#menu" class="nav-link" data-page="menu">Cardápio</a>
-                    <a href="#about" class="nav-link" data-page="about">Sobre</a>
-                    <a href="#contact" class="nav-link" data-page="contact">Contato</a>
+                <nav class="nav" id="mainNav">
+                    <div class="nav-links">
+                        <a href="#inicio" class="nav-link active">Início</a>
+                        <a href="#cardapio" class="nav-link" onclick="app.openMenuModal()">Cardápio</a>
+                        <a href="#sobre" class="nav-link">Sobre</a>
+                        <a href="#contato" class="nav-link">Contato</a>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn--primary" id="verCardapioBtn" onclick="app.openMenuModal()">
+                            <i class="fas fa-utensils"></i>
+                            Ver Cardápio
+                        </button>
+                        <button class="cart-btn" id="cartBtn" onclick="app.toggleCart()">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count hidden" id="cartCount">0</span>
+                        </button>
+                        <button class="admin-login-btn" id="adminBtn" onclick="app.openAdminModal()" title="Área Administrativa">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
                 </nav>
-                <div class="header-actions">
-                    <button class="cart-btn" id="cart-btn" type="button">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="cart-count hidden" id="cart-count">0</span>
-                    </button>
-                    <a href="#admin" class="btn btn--sm admin-link">Admin</a>
-                </div>
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main">
-        <!-- Home Page -->
-        <section id="home-page" class="page active">
-            <!-- Hero Section -->
-            <section class="hero">
-                <div class="container">
-                    <div class="hero-content">
-                        <h1 class="hero-title">Bem-vindo à Santa Sensação</h1>
-                        <p class="hero-subtitle">A pizza que vai além do sabor! Experiência gastronômica única em Santa Leopoldina.</p>
-                        <div class="hero-actions">
-                            <button class="btn btn--primary btn--lg" data-page="menu" type="button">Ver Cardápio</button>
-                            <a href="https://wa.me/5527996500341" target="_blank" class="btn btn--outline btn--lg">
-                                <i class="fab fa-whatsapp"></i> Pedir Agora
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Features Section -->
-            <section class="features">
-                <div class="container">
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🍕</div>
-                            <h3>Ingredientes Frescos</h3>
-                            <p>Usamos apenas os melhores ingredientes, sempre frescos e selecionados.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🚚</div>
-                            <h3>Entrega Rápida</h3>
-                            <p>Entregamos sua pizza quentinha em até 40 minutos.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">⭐</div>
-                            <h3>Qualidade Premium</h3>
-                            <p>A pizza número 1 do Espírito Santo, aprovada por nossos clientes.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </section>
-
-        <!-- Menu Page -->
-        <section id="menu-page" class="page">
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <div class="hero-background"></div>
+        <div class="hero-content">
             <div class="container">
-                <div class="page-header">
-                    <h1>Nosso Cardápio</h1>
-                    <p>Descubra sabores únicos preparados com muito carinho</p>
-                </div>
-
-                <!-- Menu Categories -->
-                <div class="menu-categories">
-                    <div class="category-tabs" id="category-tabs">
-                        <!-- Categories will be loaded here -->
+                <div class="hero-text">
+                    <div class="hero-badge">
+                        <i class="fas fa-award"></i>
+                        <span>A pizza nº 1 do ES</span>
                     </div>
-                </div>
-
-                <!-- Menu Items -->
-                <div class="menu-content" id="menu-content">
-                    <!-- Menu items will be loaded here -->
-                </div>
-            </div>
-        </section>
-
-        <!-- About Page -->
-        <section id="about-page" class="page">
-            <div class="container">
-                <div class="about-content">
-                    <div class="about-text">
-                        <h1>Sobre a Santa Sensação</h1>
-                        <p>Localizada no coração de Santa Leopoldina, a Santa Sensação é mais que uma pizzaria - é um lugar onde tradição e inovação se encontram para criar experiências gastronômicas inesquecíveis.</p>
-                        
-                        <p>Fundada com o propósito de servir a melhor pizza do Espírito Santo, nossa equipe trabalha incansavelmente para garantir que cada fatia seja uma explosão de sabor, feita com ingredientes frescos e receitas exclusivas.</p>
-                        
-                        <div class="about-stats">
-                            <div class="stat">
-                                <h3>1.538</h3>
-                                <p>Seguidores no Instagram</p>
-                            </div>
-                            <div class="stat">
-                                <h3>100+</h3>
-                                <p>Pizzas Vendidas por Semana</p>
-                            </div>
-                            <div class="stat">
-                                <h3>🏅</h3>
-                                <p>Pizza Nº1 do ES</p>
-                            </div>
-                        </div>
-
-                        <h3>Nosso Compromisso</h3>
-                        <p>Na Santa Sensação, acreditamos que cada pizza é uma obra de arte. Por isso, utilizamos apenas ingredientes premium, massa artesanal e um forno especial que garante aquele sabor único que nossos clientes adoram.</p>
+                    <h1 class="hero-title">
+                        Pizzaria <span class="text-gradient">Santa Sensação</span>
+                    </h1>
+                    <p class="hero-subtitle">Experiência que vai além do sabor</p>
+                    <p class="hero-description">
+                        Ingredientes frescos, massa artesanal e o carinho de sempre. 
+                        Venha descobrir por que somos a pizzaria favorita de Santa Leopoldina!
+                    </p>
+                    <div class="hero-actions">
+                        <button class="btn btn--primary btn--large" id="heroCardapioBtn" onclick="app.openMenuModal()">
+                            <i class="fas fa-pizza-slice"></i>
+                            Ver Cardápio Completo
+                        </button>
+                        <button class="btn btn--outline btn--large" onclick="app.sendToWhatsApp()">
+                            <i class="fab fa-whatsapp"></i>
+                            Pedir no WhatsApp
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+        <div class="hero-scroll-indicator">
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
 
-        <!-- Contact Page -->
-        <section id="contact-page" class="page">
-            <div class="container">
-                <div class="contact-content">
-                    <h1>Fale Conosco</h1>
-                    <p>Estamos sempre prontos para atendê-lo!</p>
+    <!-- Menu Preview Section -->
+    <section id="cardapio" class="menu-preview">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Nossos Sabores</span>
+                </div>
+                <h2 class="section-title">Pizzas em Destaque</h2>
+                <p class="section-description">
+                    Conheça algumas de nossas pizzas mais pedidas, feitas com ingredientes frescos e muito amor
+                </p>
+            </div>
+            
+            <div class="menu-showcase" id="menuShowcase">
+                <!-- Featured pizzas will be loaded here -->
+            </div>
 
-                    <div class="contact-info">
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fab fa-whatsapp"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>WhatsApp</h3>
-                                <p>Faça seu pedido pelo WhatsApp</p>
-                                <a href="https://wa.me/5527996500341" target="_blank" class="btn btn--primary">
+            <div class="menu-preview-footer">
+                <button class="btn btn--primary btn--large" id="fullMenuBtn" onclick="app.openMenuModal()">
+                    <i class="fas fa-book-open"></i>
+                    Ver Cardápio Completo
+                    <span class="btn-highlight">+15 Sabores</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="sobre" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <div class="section-badge">
+                        <i class="fas fa-heart"></i>
+                        <span>Nossa História</span>
+                    </div>
+                    <h2 class="section-title">Tradição e Sabor desde sempre</h2>
+                    <p class="about-description">
+                        Na Pizzaria Santa Sensação, cada pizza é preparada com ingredientes selecionados 
+                        e o carinho de quem faz com amor. Nossa massa é preparada diariamente, 
+                        nosso molho tem receita secreta da família, e cada pizza é uma experiência única.
+                    </p>
+                    <div class="about-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Massa artesanal fermentada por 24h</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Ingredientes frescos e selecionados</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Forno a lenha tradicional</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Atendimento familiar e acolhedor</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="image-placeholder large">
+                        <i class="fas fa-store-alt"></i>
+                        <span>Nossa Pizzaria</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contato" class="contact">
+        <div class="container">
+            <div class="section-header centered">
+                <div class="section-badge">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Fale Conosco</span>
+                </div>
+                <h2 class="section-title">Faça seu Pedido</h2>
+                <p class="section-description">
+                    Entre em contato conosco e faça seu pedido. Estamos prontos para atendê-lo!
+                </p>
+            </div>
+
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Endereço</h3>
+                            <p>Porfilio Furtado, 178<br>Centro - Santa Leopoldina, ES</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-card">
+                        <div class="contact-icon whatsapp">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>WhatsApp</h3>
+                            <p>
+                                <a href="https://wa.me/5527996500341" target="_blank">
                                     (27) 99650-0341
                                 </a>
-                            </div>
+                            </p>
                         </div>
+                    </div>
 
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fab fa-instagram"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Instagram</h3>
-                                <p>Siga-nos para novidades</p>
-                                <a href="https://www.instagram.com/santasensacao.sl" target="_blank" class="btn btn--primary">
+                    <div class="contact-card">
+                        <div class="contact-icon instagram">
+                            <i class="fab fa-instagram"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Instagram</h3>
+                            <p>
+                                <a href="https://www.instagram.com/santasensacao.sl" target="_blank">
                                     @santasensacao.sl
                                 </a>
-                            </div>
+                            </p>
                         </div>
+                    </div>
 
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Endereço</h3>
-                                <p>Porfilio Furtado, 178<br>Centro - Santa Leopoldina, ES</p>
-                            </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-clock"></i>
                         </div>
-
-                        <div class="contact-card">
-                            <div class="contact-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="contact-details">
-                                <h3>Horário</h3>
-                                <p>De quarta a domingo<br>a partir das 19h</p>
-                            </div>
+                        <div class="contact-details">
+                            <h3>Horário de Funcionamento</h3>
+                            <p>De quarta a domingo<br>a partir das 19h</p>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Admin Page -->
-        <section id="admin-page" class="page">
-            <div class="container">
-                <!-- Admin Login -->
-                <div id="admin-login" class="admin-login">
-                    <div class="login-form">
-                        <h2>Painel Administrativo</h2>
-                        <form id="login-form">
-                            <div class="form-group">
-                                <label for="admin-email">E-mail:</label>
-                                <input type="email" id="admin-email" class="form-control" value="admin@santa.com" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="admin-password">Senha:</label>
-                                <input type="password" id="admin-password" class="form-control" value="admin123" required>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width">Entrar</button>
-                        </form>
-                        <div id="login-error" class="error-message hidden"></div>
-                    </div>
-                </div>
-
-                <!-- Admin Panel -->
-                <div id="admin-panel" class="admin-panel hidden">
-                    <div class="admin-header">
-                        <h2>Painel Administrativo</h2>
-                        <button id="admin-logout" class="btn btn--outline" type="button">Sair</button>
-                    </div>
-
-                    <div class="admin-tabs">
-                        <button class="admin-tab-btn active" data-tab="status" type="button">Status</button>
-                        <button class="admin-tab-btn" data-tab="categories" type="button">Categorias</button>
-                        <button class="admin-tab-btn" data-tab="products" type="button">Produtos</button>
-                    </div>
-
-                    <!-- Status Tab -->
-                    <div id="admin-status" class="admin-tab-content active">
-                        <h3>Status da Pizzaria</h3>
-                        <div class="status-control">
-                            <label class="switch">
-                                <input type="checkbox" id="pizzaria-status">
-                                <span class="slider"></span>
-                            </label>
-                            <span id="status-text">Fechado</span>
-                        </div>
-                    </div>
-
-                    <!-- Categories Tab -->
-                    <div id="admin-categories" class="admin-tab-content">
-                        <div class="tab-header">
-                            <h3>Gerenciar Categorias</h3>
-                            <button class="btn btn--primary" id="add-category-btn" type="button">Nova Categoria</button>
-                        </div>
-                        <div id="categories-list" class="admin-list">
-                            <!-- Categories will be loaded here -->
-                        </div>
-                    </div>
-
-                    <!-- Products Tab -->
-                    <div id="admin-products" class="admin-tab-content">
-                        <div class="tab-header">
-                            <h3>Gerenciar Produtos</h3>
-                            <button class="btn btn--primary" id="add-product-btn" type="button">Novo Produto</button>
-                        </div>
-                        <div id="products-list" class="admin-list">
-                            <!-- Products will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Cart Sidebar -->
-    <div id="cart-sidebar" class="cart-sidebar">
-        <div class="cart-header">
-            <h3>Seu Pedido</h3>
-            <button class="cart-close" id="cart-close" type="button">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="cart-content">
-            <div class="cart-items" id="cart-items">
-                <!-- Cart items will be loaded here -->
-            </div>
-            <div class="cart-empty hidden" id="cart-empty">
-                <i class="fas fa-shopping-cart"></i>
-                <p>Seu carrinho está vazio</p>
-            </div>
-        </div>
-        <div class="cart-footer" id="cart-footer">
-            <div class="cart-total">
-                <span>Total: <strong id="cart-total">R$ 0,00</strong></span>
-            </div>
-            <button class="btn btn--primary btn--full-width" id="finish-order-btn" type="button">
-                <i class="fab fa-whatsapp"></i>
-                Finalizar Pedido
-            </button>
-        </div>
-    </div>
-
-    <!-- Cart Overlay -->
-    <div id="cart-overlay" class="cart-overlay"></div>
-
-    <!-- Order Modal -->
-    <div id="order-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Finalizar Pedido</h3>
-                <button class="modal-close" id="modal-close" type="button">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="order-form">
-                    <div class="form-group">
-                        <label for="customer-name">Nome Completo *</label>
-                        <input type="text" id="customer-name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delivery-type">Tipo de Pedido *</label>
-                        <select id="delivery-type" class="form-control" required>
-                            <option value="">Selecione...</option>
-                            <option value="delivery">Entrega</option>
-                            <option value="pickup">Retirada na loja</option>
-                            <option value="local">Consumir no local</option>
-                        </select>
-                    </div>
-                    <div class="form-group hidden" id="address-group">
-                        <label for="customer-address">Endereço de Entrega *</label>
-                        <textarea id="customer-address" class="form-control" rows="3" placeholder="Rua, número, bairro, ponto de referência..."></textarea>
-                    </div>
-                    <div class="order-summary">
-                        <h4>Resumo do Pedido</h4>
-                        <div id="modal-cart-items"></div>
-                        <div class="modal-total">
-                            <strong>Total: <span id="modal-total">R$ 0,00</span></strong>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn--primary btn--full-width">
+                <div class="contact-actions">
+                    <button class="btn btn--primary btn--large btn--full-width" onclick="app.sendToWhatsApp()">
                         <i class="fab fa-whatsapp"></i>
-                        Enviar pelo WhatsApp
+                        Pedir pelo WhatsApp
                     </button>
-                </form>
+                    <a href="https://www.instagram.com/santasensacao.sl" target="_blank" class="btn btn--outline btn--large btn--full-width">
+                        <i class="fab fa-instagram"></i>
+                        Seguir no Instagram
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Category Modal -->
-    <div id="category-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="category-modal-title">Nova Categoria</h3>
-                <button class="modal-close category-modal-close" type="button">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="category-form">
-                    <div class="form-group">
-                        <label for="category-name">Nome da Categoria *</label>
-                        <input type="text" id="category-name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="category-icon">Ícone *</label>
-                        <input type="text" id="category-icon" class="form-control" placeholder="Ex: 🍕" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="category-order">Ordem</label>
-                        <input type="number" id="category-order" class="form-control" min="1">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn btn--outline category-modal-close">Cancelar</button>
-                        <button type="submit" class="btn btn--primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Product Modal -->
-    <div id="product-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="product-modal-title">Novo Produto</h3>
-                <button class="modal-close product-modal-close" type="button">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="product-form">
-                    <div class="form-group">
-                        <label for="product-name">Nome do Produto *</label>
-                        <input type="text" id="product-name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-description">Descrição *</label>
-                        <textarea id="product-description" class="form-control" rows="3" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-category">Categoria *</label>
-                        <select id="product-category" class="form-control" required>
-                            <!-- Options will be loaded -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-image">URL da Imagem</label>
-                        <input type="url" id="product-image" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Preços *</label>
-                        <div class="price-inputs">
-                            <div class="price-input">
-                                <label>Pequeno</label>
-                                <input type="number" id="price-p" class="form-control" step="0.01" min="0">
-                            </div>
-                            <div class="price-input">
-                                <label>Médio</label>
-                                <input type="number" id="price-m" class="form-control" step="0.01" min="0">
-                            </div>
-                            <div class="price-input">
-                                <label>Grande</label>
-                                <input type="number" id="price-g" class="form-control" step="0.01" min="0">
-                            </div>
-                            <div class="price-input">
-                                <label>Único</label>
-                                <input type="number" id="price-u" class="form-control" step="0.01" min="0">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn btn--outline product-modal-close">Cancelar</button>
-                        <button type="submit" class="btn btn--primary">Salvar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-section">
-                    <h3>Santa Sensação</h3>
-                    <p>A pizza número 1 do Espírito Santo</p>
-                    <div class="social-links">
-                        <a href="https://wa.me/5527996500341" target="_blank">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <i class="fas fa-pizza-slice"></i>
+                        <span class="logo-text">Santa Sensação</span>
+                    </div>
+                    <p class="footer-tagline">A pizza nº 1 do ES 🏅</p>
+                    <div class="footer-social">
+                        <a href="https://wa.me/5527996500341" target="_blank" class="social-link whatsapp">
                             <i class="fab fa-whatsapp"></i>
                         </a>
-                        <a href="https://www.instagram.com/santasensacao.sl" target="_blank">
+                        <a href="https://www.instagram.com/santasensacao.sl" target="_blank" class="social-link instagram">
                             <i class="fab fa-instagram"></i>
                         </a>
                     </div>
                 </div>
-                <div class="footer-section">
-                    <h4>Contato</h4>
-                    <p><i class="fas fa-phone"></i> (27) 99650-0341</p>
-                    <p><i class="fas fa-map-marker-alt"></i> Porfilio Furtado, 178<br>Centro - Santa Leopoldina, ES</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Horário</h4>
-                    <p><i class="fas fa-clock"></i> Quarta a Domingo<br>a partir das 19h</p>
+                <div class="footer-info">
+                    <div class="footer-section">
+                        <h4>Contato</h4>
+                        <p>Porfilio Furtado, 178<br>Centro - Santa Leopoldina, ES</p>
+                        <p>WhatsApp: (27) 99650-0341</p>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Funcionamento</h4>
+                        <p>Quarta a Domingo<br>19h às 23h</p>
+                        <p>Delivery disponível</p>
+                    </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Santa Sensação. Todos os direitos reservados.</p>
+                <p>&copy; 2024 Pizzaria Santa Sensação. Todos os direitos reservados.</p>
+                <button class="admin-access-btn" id="footerAdminBtn" onclick="app.openAdminModal()">
+                    <i class="fas fa-shield-alt"></i>
+                    Área Administrativa
+                </button>
             </div>
         </div>
     </footer>
 
-    <!-- Firebase Scripts -->
+    <!-- Full Menu Modal -->
+    <div id="menuModal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-book-open"></i>
+                    Cardápio Completo
+                </h2>
+                <button class="modal-close" id="closeMenuModal" onclick="app.closeMenuModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="menu-categories">
+                    <button class="category-tab active" data-category="pizzas-salgadas">
+                        <i class="fas fa-pizza-slice"></i>
+                        Pizzas Salgadas
+                    </button>
+                    <button class="category-tab" data-category="pizzas-doces">
+                        <i class="fas fa-birthday-cake"></i>
+                        Pizzas Doces
+                    </button>
+                    <button class="category-tab" data-category="bebidas">
+                        <i class="fas fa-glass-water"></i>
+                        Bebidas
+                    </button>
+                </div>
+                <div id="menuItems" class="menu-items-container">
+                    <!-- Menu items will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-lock"></i>
+                    Acesso Administrativo
+                </h3>
+                <button class="modal-close" id="closeAdminModal" onclick="app.closeAdminModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="adminLogin" class="admin-login-section">
+                    <form id="adminLoginForm" class="admin-form">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                Email do Administrador
+                            </label>
+                            <input type="email" id="adminEmail" class="form-control" required autocomplete="username" value="admin@santa.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i>
+                                Senha
+                            </label>
+                            <input type="password" id="adminPassword" class="form-control" required autocomplete="current-password" value="admin123">
+                        </div>
+                        <button type="submit" class="btn btn--primary btn--full-width">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Entrar
+                        </button>
+                    </form>
+                    <div id="adminError" class="error-message hidden"></div>
+                    <div id="adminLoading" class="loading-message hidden">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Verificando credenciais...</span>
+                    </div>
+                </div>
+
+                <!-- Admin Panel -->
+                <div id="adminPanel" class="admin-panel hidden">
+                    <div class="admin-header">
+                        <h3>Painel Administrativo</h3>
+                        <button class="btn btn--outline" onclick="app.logoutAdmin()">Sair</button>
+                    </div>
+                    
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-tab="status">Status</button>
+                        <button class="admin-tab" data-tab="products">Produtos</button>
+                        <button class="admin-tab" data-tab="categories">Categorias</button>
+                    </div>
+
+                    <div id="adminStatus" class="admin-content active">
+                        <h4>Status da Pizzaria</h4>
+                        <div class="status-toggle">
+                            <label class="switch">
+                                <input type="checkbox" id="pizzariaStatus" onchange="app.togglePizzariaStatus(this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="statusText">Fechado</span>
+                        </div>
+                    </div>
+
+                    <div id="adminProducts" class="admin-content">
+                        <div class="admin-section-header">
+                            <h4>Gerenciar Produtos</h4>
+                            <button class="btn btn--primary" onclick="app.showProductForm()">Novo Produto</button>
+                        </div>
+                        <div id="productsList" class="admin-items-list">
+                            <!-- Products will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="adminCategories" class="admin-content">
+                        <div class="admin-section-header">
+                            <h4>Gerenciar Categorias</h4>
+                            <button class="btn btn--primary" onclick="app.showCategoryForm()">Nova Categoria</button>
+                        </div>
+                        <div id="categoriesList" class="admin-items-list">
+                            <!-- Categories will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="cart-sidebar hidden">
+        <div class="cart-header">
+            <h3>
+                <i class="fas fa-shopping-cart"></i>
+                Seu Pedido
+            </h3>
+            <button class="cart-close" id="closeCart" onclick="app.closeCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart-content" id="cartContent">
+            <div class="empty-cart" id="emptyCart">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Seu carrinho está vazio</p>
+                <small>Adicione pizzas deliciosas!</small>
+            </div>
+            <div class="cart-items" id="cartItems" style="display: none;">
+                <!-- Cart items will be loaded here -->
+            </div>
+        </div>
+        <div class="cart-footer" id="cartFooter" style="display: none;">
+            <div class="cart-total">
+                <span>Total: </span>
+                <span id="cartTotal">R$ 0,00</span>
+            </div>
+            <button class="btn btn--primary btn--full-width" id="finishOrder" onclick="app.showFinalizationModal()">
+                <i class="fab fa-whatsapp"></i>
+                Finalizar no WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <!-- Finalization Modal -->
+    <div id="finalizationModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-user"></i>
+                    Dados para Entrega
+                </h3>
+                <button class="modal-close" onclick="app.closeFinalizationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="finalizationForm">
+                    <div class="form-group">
+                        <label class="form-label" for="customerName">Nome completo</label>
+                        <input type="text" id="customerName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="customerPhone">Telefone/WhatsApp</label>
+                        <input type="tel" id="customerPhone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="customerAddress">Endereço completo</label>
+                        <textarea id="customerAddress" class="form-control" rows="3" required placeholder="Rua, número, bairro, cidade, ponto de referência..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="orderNotes">Observações (opcional)</label>
+                        <textarea id="orderNotes" class="form-control" rows="2" placeholder="Alguma observação especial para seu pedido?"></textarea>
+                    </div>
+                    
+                    <div class="order-summary">
+                        <h4>Resumo do Pedido</h4>
+                        <div id="orderSummaryItems"></div>
+                        <div class="order-total">
+                            <strong>Total: <span id="orderSummaryTotal">R$ 0,00</span></strong>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn--primary btn--full-width">
+                        <i class="fab fa-whatsapp"></i>
+                        Enviar Pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    
-    <!-- App Script -->
     <script src="app.js"></script>
 </body>
 </html>
