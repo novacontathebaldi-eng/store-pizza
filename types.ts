@@ -1,4 +1,3 @@
-
 export interface Product {
     id: string;
     name: string;
@@ -8,6 +7,7 @@ export interface Product {
     imageUrl: string;
     badge?: string;
     active: boolean;
+    orderIndex: number;
 }
 
 export interface Category {

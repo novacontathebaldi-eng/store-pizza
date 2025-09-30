@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product, Category } from '../types';
 
@@ -11,34 +10,33 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, categories }) => {
-    const [formData, setFormData] = useState<Omit<Product, 'id' | 'active'>>({
+    const getInitialFormData = (): Omit<Product, 'id' | 'active'> => ({
         name: '',
         description: '',
-        categoryId: '',
+        categoryId: categories.length > 0 ? categories[0].id : '',
         prices: {},
         imageUrl: '',
-        badge: ''
+        badge: '',
+        orderIndex: 0,
     });
+    
+    const [formData, setFormData] = useState<Omit<Product, 'id' | 'active'>>(getInitialFormData());
 
     useEffect(() => {
-        if (product) {
-            setFormData({
-                name: product.name,
-                description: product.description,
-                categoryId: product.categoryId,
-                prices: product.prices,
-                imageUrl: product.imageUrl,
-                badge: product.badge || ''
-            });
-        } else {
-            setFormData({
-                name: '',
-                description: '',
-                categoryId: categories.length > 0 ? categories[0].id : '',
-                prices: {},
-                imageUrl: '',
-                badge: ''
-            });
+        if (isOpen) {
+            if (product) {
+                setFormData({
+                    name: product.name,
+                    description: product.description,
+                    categoryId: product.categoryId,
+                    prices: product.prices,
+                    imageUrl: product.imageUrl,
+                    badge: product.badge || '',
+                    orderIndex: product.orderIndex,
+                });
+            } else {
+                setFormData(getInitialFormData());
+            }
         }
     }, [product, isOpen, categories]);
 
@@ -113,6 +111,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
                                     </div>
                                 ))}
                             </div>
+                             <p className="text-xs text-gray-500 mt-1">Deixe o campo em branco para tamanhos não aplicáveis.</p>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
                             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>

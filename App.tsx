@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, Category, CartItem, OrderDetails } from './types';
 import { Header } from './components/Header';
@@ -10,7 +9,10 @@ import { AdminSection } from './components/AdminSection';
 import { Footer } from './components/Footer';
 import { CartSidebar } from './components/CartSidebar';
 import { CheckoutModal } from './components/CheckoutModal';
-import { getMockData, updateMockProduct, addMockProduct, deleteMockProduct, updateMockStoreStatus } from './services/mockService';
+import { db } from './services/firebase';
+import * as firebaseService from './services/firebaseService';
+import { collection, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+
 
 const App: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -19,37 +21,63 @@ const App: React.FC = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
     
     useEffect(() => {
-        const loadCartFromStorage = () => {
-            try {
-                const savedCart = localStorage.getItem('santaSensacaoCart');
-                if (savedCart) {
-                    setCart(JSON.parse(savedCart));
-                }
-            } catch (error) {
-                console.error("Failed to load cart from localStorage:", error);
-            }
-        };
-        loadCartFromStorage();
+        const savedCart = localStorage.getItem('santaSensacaoCart');
+        if (savedCart) {
+            setCart(JSON.parse(savedCart));
+        }
     }, []);
 
     useEffect(() => {
-        const fetchData = async () => {
-            const { products: fetchedProducts, categories: fetchedCategories, isOnline } = await getMockData();
-            setProducts(fetchedProducts);
-            setCategories(fetchedCategories);
-            setIsStoreOnline(isOnline);
+        if (!db) {
+            setError("Falha ao conectar com o Firebase. Verifique se as credenciais no arquivo `services/firebase.ts` estão corretas e se sua conexão com a internet está ativa.");
+            setIsLoading(false);
+            return;
+        }
+
+        const handleConnectionError = (err: Error, context: string) => {
+            console.error(`Error fetching ${context}:`, err);
+            setError("Não foi possível conectar ao banco de dados. Verifique sua configuração do Firebase e as regras de segurança.");
+            setIsLoading(false);
         };
-        fetchData();
+
+        // Listener for store status
+        const statusDocRef = doc(db, 'store_config', 'status');
+        const unsubStatus = onSnapshot(statusDocRef, doc => {
+            const data = doc.data();
+            if (data) {
+                setIsStoreOnline(data.isOpen);
+            }
+        }, err => handleConnectionError(err, "store status"));
+
+        // Listener for categories
+        const categoriesQuery = query(collection(db, 'categories'), orderBy('order'));
+        const unsubCategories = onSnapshot(categoriesQuery, snapshot => {
+            const fetchedCategories: Category[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+            setCategories(fetchedCategories);
+        }, err => handleConnectionError(err, "categories"));
+
+        // Listener for products
+        const productsQuery = query(collection(db, 'products'), orderBy('orderIndex'));
+        const unsubProducts = onSnapshot(productsQuery, snapshot => {
+            const fetchedProducts: Product[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+            setProducts(fetchedProducts);
+            setIsLoading(false);
+            setError(null);
+        }, err => handleConnectionError(err, "products"));
+
+        return () => {
+            unsubStatus();
+            unsubCategories();
+            unsubProducts();
+        };
     }, []);
     
     useEffect(() => {
-        try {
-            localStorage.setItem('santaSensacaoCart', JSON.stringify(cart));
-        } catch (error) {
-            console.error("Failed to save cart to localStorage:", error);
-        }
+        localStorage.setItem('santaSensacaoCart', JSON.stringify(cart));
     }, [cart]);
 
     const handleAddToCart = useCallback((product: Product, size: string, price: number) => {
@@ -126,24 +154,42 @@ const App: React.FC = () => {
     };
 
     const handleSaveProduct = useCallback(async (product: Product) => {
-        if (product.id && products.some(p => p.id === product.id)) {
-            const updated = await updateMockProduct(product);
-            setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
-        } else {
-            const newProduct = await addMockProduct(product);
-            setProducts(prev => [...prev, newProduct]);
+        try {
+            if (product.id) {
+                await firebaseService.updateProduct(product);
+            } else {
+                await firebaseService.addProduct({ ...product, orderIndex: products.length });
+            }
+        } catch (error) {
+            console.error("Failed to save product:", error);
+            alert("Erro ao salvar produto. Tente novamente.");
         }
-    }, [products]);
+    }, [products.length]);
     
     const handleDeleteProduct = useCallback(async (productId: string) => {
-        await deleteMockProduct(productId);
-        setProducts(prev => prev.filter(p => p.id !== productId));
+        try {
+            await firebaseService.deleteProduct(productId);
+        } catch (error) {
+            console.error("Failed to delete product:", error);
+            alert("Erro ao deletar produto. Tente novamente.");
+        }
     }, []);
 
     const handleStoreStatusChange = useCallback(async (isOnline: boolean) => {
-        const success = await updateMockStoreStatus(isOnline);
-        if (success) {
-            setIsStoreOnline(isOnline);
+        try {
+            await firebaseService.updateStoreStatus(isOnline);
+        } catch (error) {
+            console.error("Failed to update store status:", error);
+            alert("Erro ao atualizar status da loja. Tente novamente.");
+        }
+    }, []);
+
+    const handleReorderProducts = useCallback(async (reorderedProducts: Product[]) => {
+        try {
+            await firebaseService.reorderProducts(reorderedProducts);
+        } catch (error) {
+            console.error("Failed to reorder products:", error);
+            alert("Erro ao reordenar produtos. Tente novamente.");
         }
     }, []);
     
@@ -160,12 +206,30 @@ const App: React.FC = () => {
 
             <main className="flex-grow">
                 <HeroSection />
-                <MenuSection 
-                    categories={categories} 
-                    products={products} 
-                    onAddToCart={handleAddToCart}
-                    isStoreOnline={isStoreOnline}
-                />
+                
+                {error && (
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md" role="alert">
+                            <p className="font-bold text-lg mb-2">Erro de Conexão</p>
+                            <p>{error}</p>
+                        </div>
+                    </div>
+                )}
+
+                {isLoading ? (
+                    <div className="text-center py-20">
+                        <i className="fas fa-spinner fa-spin text-5xl text-accent"></i>
+                        <p className="mt-4 text-xl font-semibold text-gray-600">Carregando cardápio...</p>
+                    </div>
+                ) : !error && (
+                    <MenuSection 
+                        categories={categories} 
+                        products={products} 
+                        onAddToCart={handleAddToCart}
+                        isStoreOnline={isStoreOnline}
+                    />
+                )}
+
                 <AboutSection />
                 <ContactSection />
                 <AdminSection 
@@ -175,6 +239,7 @@ const App: React.FC = () => {
                     onSaveProduct={handleSaveProduct}
                     onDeleteProduct={handleDeleteProduct}
                     onStoreStatusChange={handleStoreStatusChange}
+                    onReorderProducts={handleReorderProducts}
                 />
             </main>
 
@@ -186,9 +251,14 @@ const App: React.FC = () => {
                 cartItems={cart}
                 onUpdateQuantity={handleUpdateCartQuantity}
                 onCheckout={() => {
+                    if (!isStoreOnline) {
+                        alert("A loja está fechada. Não é possível finalizar o pedido.");
+                        return;
+                    }
                     setIsCartOpen(false);
                     setIsCheckoutModalOpen(true);
                 }}
+                isStoreOnline={isStoreOnline}
             />
 
             <CheckoutModal 

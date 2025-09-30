@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CartItem } from '../types';
 
@@ -8,9 +7,10 @@ interface CartSidebarProps {
     cartItems: CartItem[];
     onUpdateQuantity: (itemId: string, newQuantity: number) => void;
     onCheckout: () => void;
+    isStoreOnline: boolean;
 }
 
-export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cartItems, onUpdateQuantity, onCheckout }) => {
+export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cartItems, onUpdateQuantity, onCheckout, isStoreOnline }) => {
     const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -57,8 +57,13 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose, cartI
                             <span className="font-semibold text-gray-700">Total ({totalItems} {totalItems > 1 ? 'itens' : 'item'}):</span>
                             <span className="font-bold text-2xl text-accent">{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                         </div>
-                        <button onClick={onCheckout} className="w-full bg-accent text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-opacity-90 transition-all">
-                            <i className="fab fa-whatsapp mr-2"></i>Finalizar Pedido
+                        <button 
+                            onClick={onCheckout} 
+                            disabled={!isStoreOnline}
+                            className="w-full bg-accent text-white font-bold py-3 px-6 rounded-lg text-lg hover:bg-opacity-90 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            <i className={`fas ${isStoreOnline ? 'fa-whatsapp' : 'fa-clock'} mr-2`}></i>
+                            {isStoreOnline ? 'Finalizar Pedido' : 'Loja Fechada'}
                         </button>
                     </div>
                 )}

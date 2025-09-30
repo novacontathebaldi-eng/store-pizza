@@ -1,7 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, Category } from '../types';
 import { ProductModal } from './ProductModal';
+// @ts-ignore - Sortable will be a global from CDN
+import Sortable from 'sortablejs';
 
 interface AdminSectionProps {
     allProducts: Product[];
@@ -10,9 +11,10 @@ interface AdminSectionProps {
     onSaveProduct: (product: Product) => Promise<void>;
     onDeleteProduct: (productId: string) => Promise<void>;
     onStoreStatusChange: (isOnline: boolean) => Promise<void>;
+    onReorderProducts: (products: Product[]) => Promise<void>;
 }
 
-export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCategories, isStoreOnline, onSaveProduct, onDeleteProduct, onStoreStatusChange }) => {
+export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCategories, isStoreOnline, onSaveProduct, onDeleteProduct, onStoreStatusChange, onReorderProducts }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeTab, setActiveTab] = useState('status');
     const [email, setEmail] = useState('');
@@ -21,6 +23,9 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
 
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+    const productListRef = useRef<HTMLDivElement>(null);
+    const sortableInstance = useRef<Sortable | null>(null);
 
     useEffect(() => {
         const checkHash = () => {
@@ -31,6 +36,35 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         window.addEventListener('hashchange', checkHash);
         return () => window.removeEventListener('hashchange', checkHash);
     }, [isLoggedIn]);
+
+    useEffect(() => {
+        if (activeTab === 'products' && productListRef.current) {
+            if (sortableInstance.current) {
+                sortableInstance.current.destroy();
+            }
+            sortableInstance.current = Sortable.create(productListRef.current, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                onEnd: (evt) => {
+                    if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
+                    
+                    const newProducts = [...allProducts];
+                    const [movedItem] = newProducts.splice(evt.oldIndex, 1);
+                    newProducts.splice(evt.newIndex, 0, movedItem);
+                    
+                    onReorderProducts(newProducts);
+                }
+            });
+        }
+        
+        return () => {
+            if (sortableInstance.current) {
+                sortableInstance.current.destroy();
+                sortableInstance.current = null;
+            }
+        };
+    }, [activeTab, allProducts, onReorderProducts]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -126,16 +160,19 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                                 <h3 className="text-xl font-bold">Gerenciar Produtos</h3>
                                 <button onClick={handleAddNewProduct} className="bg-accent text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all"><i className="fas fa-plus mr-2"></i>Novo Produto</button>
                             </div>
-                            <div className="space-y-3">
+                            <div ref={productListRef} className="space-y-3">
                                 {allProducts.map(product => (
-                                    <div key={product.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                                        <div>
-                                            <p className="font-bold">{product.name}</p>
-                                            <p className="text-sm text-gray-500">{allCategories.find(c => c.id === product.categoryId)?.name}</p>
+                                    <div key={product.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <i className="fas fa-grip-vertical drag-handle text-gray-400" title="Arraste para reordenar"></i>
+                                            <div>
+                                                <p className="font-bold">{product.name}</p>
+                                                <p className="text-sm text-gray-500">{allCategories.find(c => c.id === product.categoryId)?.name}</p>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => handleEditProduct(product)} className="bg-blue-500 text-white w-8 h-8 rounded-md hover:bg-blue-600"><i className="fas fa-edit"></i></button>
-                                            <button onClick={() => window.confirm('Tem certeza?') && onDeleteProduct(product.id)} className="bg-red-500 text-white w-8 h-8 rounded-md hover:bg-red-600"><i className="fas fa-trash"></i></button>
+                                            <button onClick={() => handleEditProduct(product)} className="bg-blue-500 text-white w-8 h-8 rounded-md hover:bg-blue-600" aria-label={`Editar ${product.name}`}><i className="fas fa-edit"></i></button>
+                                            <button onClick={() => window.confirm('Tem certeza que deseja excluir este produto?') && onDeleteProduct(product.id)} className="bg-red-500 text-white w-8 h-8 rounded-md hover:bg-red-600" aria-label={`Deletar ${product.name}`}><i className="fas fa-trash"></i></button>
                                         </div>
                                     </div>
                                 ))}
@@ -147,7 +184,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                     {activeTab === 'categories' && (
                         <div>
                              <h3 className="text-xl font-bold mb-4">Gerenciar Categorias</h3>
-                             <p className="text-gray-500 mb-4">A edição de categorias será implementada em breve. Por enquanto, as categorias são gerenciadas via código.</p>
+                             <p className="text-gray-500 mb-4">A edição de categorias será implementada em breve. Por enquanto, as categorias são gerenciadas via banco de dados.</p>
                              <div className="space-y-3">
                                 {allCategories.map(cat => (
                                     <div key={cat.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
