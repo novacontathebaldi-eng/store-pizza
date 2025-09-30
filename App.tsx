@@ -11,6 +11,7 @@ import { CartSidebar } from './components/CartSidebar';
 import { CheckoutModal } from './components/CheckoutModal';
 import { db } from './services/firebase';
 import * as firebaseService from './services/firebaseService';
+import { seedDatabase } from './services/seed'; // Importar a função de seed
 import { collection, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 
@@ -33,14 +34,14 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (!db) {
-            setError("Falha ao conectar com o Firebase. Verifique se as credenciais no arquivo `services/firebase.ts` estão corretas e se sua conexão com a internet está ativa.");
+            setError("Falha ao inicializar o Firebase. Verifique as credenciais em services/firebase.ts");
             setIsLoading(false);
             return;
         }
 
         const handleConnectionError = (err: Error, context: string) => {
             console.error(`Error fetching ${context}:`, err);
-            setError("Não foi possível conectar ao banco de dados. Verifique sua configuração do Firebase e as regras de segurança.");
+            setError("Não foi possível conectar ao banco de dados. Verifique sua configuração e as regras de segurança.");
             setIsLoading(false);
         };
 
@@ -210,8 +211,15 @@ const App: React.FC = () => {
                 {error && (
                     <div className="container mx-auto px-4 py-8">
                         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md" role="alert">
-                            <p className="font-bold text-lg mb-2">Erro de Conexão</p>
-                            <p>{error}</p>
+                            <p className="font-bold text-lg mb-2">Erro de Conexão com o Firebase</p>
+                            <p className="mb-4">{error}</p>
+                            <h3 className="font-semibold text-md mb-2">Possíveis Soluções:</h3>
+                            <ul className="list-disc list-inside text-sm space-y-1">
+                                <li>Verifique se as credenciais no arquivo <strong>services/firebase.ts</strong> estão 100% corretas.</li>
+                                <li>No Console do Firebase, certifique-se de que o <strong>Cloud Firestore</strong> foi criado e ativado para este projeto.</li>
+                                <li>Confira as <strong>Regras de Segurança</strong> do Firestore. Para teste, use <code>allow read: if true;</code> para as coleções.</li>
+                                <li>Verifique sua conexão com a internet e se não há um firewall bloqueando o acesso ao Google Cloud.</li>
+                            </ul>
                         </div>
                     </div>
                 )}
@@ -240,6 +248,7 @@ const App: React.FC = () => {
                     onDeleteProduct={handleDeleteProduct}
                     onStoreStatusChange={handleStoreStatusChange}
                     onReorderProducts={handleReorderProducts}
+                    onSeedDatabase={seedDatabase}
                 />
             </main>
 

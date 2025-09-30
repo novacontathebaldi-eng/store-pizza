@@ -12,9 +12,10 @@ interface AdminSectionProps {
     onDeleteProduct: (productId: string) => Promise<void>;
     onStoreStatusChange: (isOnline: boolean) => Promise<void>;
     onReorderProducts: (products: Product[]) => Promise<void>;
+    onSeedDatabase: () => Promise<void>;
 }
 
-export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCategories, isStoreOnline, onSaveProduct, onDeleteProduct, onStoreStatusChange, onReorderProducts }) => {
+export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCategories, isStoreOnline, onSaveProduct, onDeleteProduct, onStoreStatusChange, onReorderProducts, onSeedDatabase }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeTab, setActiveTab] = useState('status');
     const [email, setEmail] = useState('');
@@ -94,6 +95,18 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         setIsProductModalOpen(true);
     };
 
+    const handleSeedDatabase = async () => {
+        if (window.confirm('Você tem certeza que deseja popular o banco de dados? Isso adicionará os produtos e categorias iniciais. Esta ação só deve ser feita uma vez.')) {
+            try {
+                await onSeedDatabase();
+                alert('Banco de dados populado com sucesso!');
+            } catch (error) {
+                console.error("Failed to seed database:", error);
+                alert("Erro ao popular o banco de dados. Verifique o console para mais detalhes.");
+            }
+        }
+    };
+
     if (window.location.hash !== '#admin') {
         return null;
     }
@@ -141,7 +154,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                     {activeTab === 'status' && (
                         <div>
                             <h3 className="text-xl font-bold mb-4">Status da Pizzaria</h3>
-                            <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
+                            <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg mb-6">
                                 <label htmlFor="store-status-toggle" className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="store-status-toggle" className="sr-only peer" checked={isStoreOnline} onChange={e => onStoreStatusChange(e.target.checked)} />
                                     <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-green-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -149,6 +162,14 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                                 <span className={`font-semibold text-lg ${isStoreOnline ? 'text-green-600' : 'text-red-600'}`}>
                                     {isStoreOnline ? 'Aberta para pedidos' : 'Fechada'}
                                 </span>
+                            </div>
+                            
+                            <h3 className="text-xl font-bold mb-4">Ações do Banco de Dados</h3>
+                             <div className="bg-gray-50 p-4 rounded-lg">
+                                <p className="text-gray-600 mb-3">Use este botão para popular o banco de dados com os produtos e categorias iniciais. Use apenas uma vez na configuração inicial.</p>
+                                <button onClick={handleSeedDatabase} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-all">
+                                    <i className="fas fa-database mr-2"></i>Popular Banco de Dados
+                                </button>
                             </div>
                         </div>
                     )}
