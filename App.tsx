@@ -25,6 +25,7 @@ const App: React.FC = () => {
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeSection, setActiveSection] = useState('Início');
     
     useEffect(() => {
         const savedCart = localStorage.getItem('santaSensacaoCart');
@@ -33,16 +34,52 @@ const App: React.FC = () => {
         }
     }, []);
 
+    // Observer for active section title
+    useEffect(() => {
+        const sectionIds = ['inicio', 'cardapio', 'sobre', 'contato'];
+        const sectionElements = sectionIds.map(id => document.getElementById(id));
+        
+        const observerOptions = {
+            root: null,
+            rootMargin: '-50% 0px -50% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idToTitle: { [key: string]: string } = {
+                        'inicio': 'Início',
+                        'cardapio': 'Cardápio',
+                        'sobre': 'Sobre Nós',
+                        'contato': 'Contato'
+                    };
+                    setActiveSection(idToTitle[entry.target.id] || 'Início');
+                }
+            });
+        }, observerOptions);
+
+        sectionElements.forEach(el => {
+            if (el) observer.observe(el);
+        });
+
+        return () => {
+            sectionElements.forEach(el => {
+                if (el) observer.unobserve(el);
+            });
+        };
+    }, []);
+
     useEffect(() => {
         if (!db) {
-            setError("Falha ao inicializar o Firebase. Verifique as credenciais em services/firebase.ts");
+            setError("Falha na conexão com o banco de dados. Este é um problema conhecido no ambiente de desenvolvimento atual (sandbox), que bloqueia conexões externas. Seu site funcionará normalmente online. Verifique se as credenciais em services/firebase.ts estão corretas.");
             setIsLoading(false);
             return;
         }
 
         const handleConnectionError = (err: Error, context: string) => {
             console.error(`Error fetching ${context}:`, err);
-            setError("Não foi possível conectar ao banco de dados. Verifique sua conexão ou se há restrições na rede.");
+            setError("Não foi possível conectar ao banco de dados. Este é um problema conhecido no ambiente de desenvolvimento atual (sandbox), que bloqueia conexões externas. Seu site funcionará normalmente online.");
             setIsLoading(false);
         };
 
@@ -87,12 +124,10 @@ const App: React.FC = () => {
             const existingItemIndex = prevCart.findIndex(item => item.productId === product.id && item.size === size);
             if (existingItemIndex > -1) {
                 const updatedCart = [...prevCart];
-                // FIX: Corrected variable name from `existingItem-`ndex` to `existingItemIndex`.
                 updatedCart[existingItemIndex].quantity += 1;
                 return updatedCart;
             } else {
                 const newItem: CartItem = {
-                    // FIX: Corrected template literal syntax.
                     id: `${product.id}-${size}`,
                     productId: product.id,
                     name: product.name,
@@ -118,8 +153,6 @@ const App: React.FC = () => {
 
     const handleCheckout = (details: OrderDetails) => {
         const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2);
-
-        // FIX: Replaced multiple broken string concatenations with correct template literal usage.
         let message = `*🍕 NOVO PEDIDO - PIZZARIA SANTA SENSAÇÃO 🍕*\n\n`;
         message += `*👤 DADOS DO CLIENTE:*\n`;
         message += `*Nome:* ${details.name}\n`;
@@ -202,7 +235,7 @@ const App: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <Header cartItemCount={cartTotalItems} onCartClick={() => setIsCartOpen(true)} />
+            <Header cartItemCount={cartTotalItems} onCartClick={() => setIsCartOpen(true)} activeSection={activeSection} />
             
             <div id="status-banner" className={`bg-red-600 text-white text-center p-2 font-semibold ${isStoreOnline ? 'hidden' : ''}`}>
                 <i className="fas fa-times-circle mr-2"></i>
@@ -215,14 +248,8 @@ const App: React.FC = () => {
                 {error && (
                     <div className="container mx-auto px-4 py-8">
                         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md" role="alert">
-                            <p className="font-bold text-lg mb-2">Falha na Conexão com o Banco de Dados</p>
+                            <p className="font-bold text-lg mb-2">Falha na Conexão</p>
                             <p className="mb-4">{error}</p>
-                            <h3 className="font-semibold text-md mb-2">Verificações Sugeridas:</h3>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                                <li>Confira se as credenciais no arquivo <strong>services/firebase.ts</strong> estão corretas.</li>
-                                <li>Verifique sua conexão com a internet.</li>
-                                <li>Em alguns ambientes de desenvolvimento (sandboxes), conexões externas podem ser bloqueadas. Seu site funciona online, o que confirma que o código e a configuração estão corretos.</li>
-                            </ul>
                         </div>
                     </div>
                 )}

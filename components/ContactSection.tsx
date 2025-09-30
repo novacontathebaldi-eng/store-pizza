@@ -51,7 +51,7 @@ export const ContactSection: React.FC = () => {
                      <ContactCard 
                         icon="fas fa-clock"
                         title="Horário"
-                        text="Quarta a Domingo<br>19h às 23h"
+                        text="Quarta a Domingo<br>19h às 22h"
                     />
                 </div>
             </div>

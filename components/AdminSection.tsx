@@ -21,6 +21,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [showAdminPanel, setShowAdminPanel] = useState(window.location.hash === '#admin');
 
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -29,14 +30,19 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
     const sortableInstance = useRef<Sortable | null>(null);
 
     useEffect(() => {
-        const checkHash = () => {
-            if (window.location.hash !== '#admin' && isLoggedIn) {
-                // optional: auto-logout if hash changes
-            }
+        const handleHashChange = () => {
+            setShowAdminPanel(window.location.hash === '#admin');
         };
-        window.addEventListener('hashchange', checkHash);
-        return () => window.removeEventListener('hashchange', checkHash);
-    }, [isLoggedIn]);
+        
+        window.addEventListener('hashchange', handleHashChange, false);
+        
+        // Initial check in case the page loads with the hash
+        handleHashChange();
+
+        return () => {
+            window.removeEventListener('hashchange', handleHashChange, false);
+        };
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'products' && productListRef.current) {
@@ -107,7 +113,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         }
     };
 
-    if (window.location.hash !== '#admin') {
+    if (!showAdminPanel) {
         return null;
     }
 

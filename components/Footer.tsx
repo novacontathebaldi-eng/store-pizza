@@ -29,13 +29,16 @@ export const Footer: React.FC = () => {
                         <h4 className="font-bold text-lg mb-4">Funcionamento</h4>
                          <ul className="space-y-2 text-brand-green-300">
                             <li><i className="fas fa-clock mr-2 text-accent"></i>Quarta a Domingo</li>
-                            <li>19h às 23h</li>
+                            <li>19h às 22h</li>
                             <li><i className="fas fa-truck mr-2 text-accent"></i>Delivery disponível</li>
                         </ul>
                     </div>
                 </div>
                 <div className="border-t border-brand-olive-600 mt-8 pt-6 text-center text-brand-green-300 text-sm">
                     <p>&copy; {new Date().getFullYear()} Pizzaria Santa Sensação. Todos os direitos reservados.</p>
+                    <p className="mt-2 text-xs">
+                        <a href="#admin" className="hover:text-white transition-colors">Acesso Restrito</a>
+                    </p>
                 </div>
             </div>
         </footer>

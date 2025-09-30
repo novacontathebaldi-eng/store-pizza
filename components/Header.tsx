@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 interface HeaderProps {
     cartItemCount: number;
     onCartClick: () => void;
+    activeSection: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartItemCount, onCartClick }) => {
+export const Header: React.FC<HeaderProps> = ({ cartItemCount, onCartClick, activeSection }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -39,16 +40,20 @@ export const Header: React.FC<HeaderProps> = ({ cartItemCount, onCartClick }) =>
     return (
         <header className={`bg-brand-green-700 text-text-on-dark sticky top-0 z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
             <div className="container mx-auto px-4">
-                <div className="flex justify-between items-center h-20">
+                <div className="flex justify-between items-center h-20 relative">
                     <a href="#inicio" onClick={(e) => { e.preventDefault(); scrollToSection('inicio');}} className="flex items-center gap-3 text-xl font-bold">
                         <img src="https://raw.githubusercontent.com/the-muller/pizzaria-santa-sensacao/main/logo.png" alt="Santa Sensação Logo" className="h-10" />
                         <span className="hidden sm:inline">Santa Sensação</span>
                     </a>
                     
+                    <div className="lg:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-bold">
+                        {activeSection}
+                    </div>
+                    
                     <nav className="hidden lg:flex items-center gap-6">
                         <a href="#inicio" onClick={(e) => { e.preventDefault(); scrollToSection('inicio');}} className="font-medium hover:text-brand-gold-600 transition-colors">Início</a>
                         <a href="#cardapio" onClick={(e) => { e.preventDefault(); scrollToSection('cardapio');}} className="font-medium hover:text-brand-gold-600 transition-colors">Cardápio</a>
-                        <a href="#sobre" onClick={(e) => { e.preventDefault(); scrollToSection('sobre');}} className="font-medium hover:text-brand-gold-600 transition-colors">Sobre</a>
+                        <a href="#sobre" onClick={(e) => { e.preventDefault(); scrollToSection('sobre');}} className="font-medium hover:text-brand-gold-600 transition-colors">Sobre Nós</a>
                         <a href="#contato" onClick={(e) => { e.preventDefault(); scrollToSection('contato');}} className="font-medium hover:text-brand-gold-600 transition-colors">Contato</a>
                     </nav>
 
@@ -65,9 +70,6 @@ export const Header: React.FC<HeaderProps> = ({ cartItemCount, onCartClick }) =>
                                 </span>
                             )}
                         </button>
-                        <a href="#admin" className="w-12 h-12 hidden sm:flex items-center justify-center rounded-lg bg-brand-olive-600 hover:bg-opacity-80 transition-colors">
-                            <i className="fas fa-cog text-lg"></i>
-                        </a>
                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden w-12 h-12 flex items-center justify-center rounded-lg bg-brand-olive-600 hover:bg-opacity-80 transition-colors z-50">
                             <i className={`fas ${isMenuOpen ? 'fa-times' : 'fa-bars'} text-lg`}></i>
                         </button>
@@ -80,11 +82,8 @@ export const Header: React.FC<HeaderProps> = ({ cartItemCount, onCartClick }) =>
                 <nav className="flex flex-col items-center justify-center h-full gap-8 text-2xl pt-20">
                     <a href="#inicio" onClick={(e) => { e.preventDefault(); scrollToSection('inicio'); handleLinkClick();}} className="font-bold hover:text-brand-gold-600 transition-colors">Início</a>
                     <a href="#cardapio" onClick={(e) => { e.preventDefault(); scrollToSection('cardapio'); handleLinkClick();}} className="font-bold hover:text-brand-gold-600 transition-colors">Cardápio</a>
-                    <a href="#sobre" onClick={(e) => { e.preventDefault(); scrollToSection('sobre'); handleLinkClick();}} className="font-bold hover:text-brand-gold-600 transition-colors">Sobre</a>
+                    <a href="#sobre" onClick={(e) => { e.preventDefault(); scrollToSection('sobre'); handleLinkClick();}} className="font-bold hover:text-brand-gold-600 transition-colors">Sobre Nós</a>
                     <a href="#contato" onClick={(e) => { e.preventDefault(); scrollToSection('contato'); handleLinkClick();}} className="font-bold hover:text-brand-gold-600 transition-colors">Contato</a>
-                    <a href="#admin" onClick={handleLinkClick} className="font-bold hover:text-brand-gold-600 transition-colors mt-8 text-brand-green-300">
-                        <i className="fas fa-cog mr-2"></i>Admin
-                    </a>
                 </nav>
             </div>
         </header>
