@@ -28,7 +28,11 @@ export const reorderProducts = async (products: Product[]): Promise<void> => {
     const batch = writeBatch(db);
     products.forEach((product, index) => {
         const productRef = doc(db, 'products', product.id);
-        batch.update(productRef, { orderIndex: index });
+        // Atualiza tanto a ordem quanto a categoria, caso tenha sido movido
+        batch.update(productRef, { 
+            orderIndex: index,
+            categoryId: product.categoryId 
+        });
     });
     await batch.commit();
 };

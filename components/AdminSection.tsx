@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Product, Category } from '../types';
 import { ProductModal } from './ProductModal';
 import { CategoryModal } from './CategoryModal';
@@ -38,10 +38,12 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-    const productListRef = useRef<HTMLDivElement>(null);
     const categoryListRef = useRef<HTMLDivElement>(null);
-    const sortableProducts = useRef<Sortable | null>(null);
     const sortableCategories = useRef<Sortable | null>(null);
+    
+    // Refs for product lists grouped by category
+    const productListRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+    const sortableProductInstances = useRef<Map<string, Sortable>>(new Map());
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -56,41 +58,79 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
         };
     }, []);
 
-    const createSortable = (ref: React.RefObject<HTMLElement>, items: any[], onEnd: (reorderedItems: any[]) => void) => {
-        if (!ref.current) return null;
-        return Sortable.create(ref.current, {
-            animation: 150,
-            handle: '.drag-handle',
-            ghostClass: 'sortable-ghost',
-            delay: 100, // For mobile touch
-            delayOnTouchOnly: true, // For mobile touch
-            onEnd: (evt) => {
-                if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
-                
-                const newItems = [...items];
-                const [movedItem] = newItems.splice(evt.oldIndex, 1);
-                newItems.splice(evt.newIndex, 0, movedItem);
-                
-                onEnd(newItems);
+    const handleProductReorder = useCallback(() => {
+        const allProductElements = Array.from(document.querySelectorAll('.product-list .product-item'));
+        let reorderedProducts: Product[] = [];
+    
+        allProductElements.forEach(el => {
+            const productId = (el as HTMLElement).dataset.id;
+            const newCategoryId = (el.parentElement as HTMLElement).dataset.categoryId;
+            const product = allProducts.find(p => p.id === productId);
+    
+            if (product && newCategoryId) {
+                reorderedProducts.push({
+                    ...product,
+                    categoryId: newCategoryId,
+                });
             }
         });
-    };
     
+        // Update orderIndex based on the new flat array order
+        const finalProducts = reorderedProducts.map((p, index) => ({ ...p, orderIndex: index }));
+        onReorderProducts(finalProducts);
+    }, [allProducts, onReorderProducts]);
+
     useEffect(() => {
         if (activeTab === 'products') {
-            if (sortableProducts.current) sortableProducts.current.destroy();
-            sortableProducts.current = createSortable(productListRef, allProducts, onReorderProducts);
+            // Cleanup previous instances
+            sortableProductInstances.current.forEach(instance => instance.destroy());
+            sortableProductInstances.current.clear();
+            
+            productListRefs.current.forEach((el, categoryId) => {
+                if (el) {
+                    const instance = Sortable.create(el, {
+                        group: 'products', // Allow dragging between lists
+                        animation: 150,
+                        handle: '.drag-handle',
+                        ghostClass: 'sortable-ghost',
+                        delay: 100,
+                        delayOnTouchOnly: true,
+                        onEnd: handleProductReorder,
+                    });
+                    sortableProductInstances.current.set(categoryId, instance);
+                }
+            });
         }
+        
         if (activeTab === 'categories') {
             if (sortableCategories.current) sortableCategories.current.destroy();
-            sortableCategories.current = createSortable(categoryListRef, allCategories, onReorderCategories);
+            if (categoryListRef.current) {
+                sortableCategories.current = Sortable.create(categoryListRef.current, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    delay: 100,
+                    delayOnTouchOnly: true,
+                    onEnd: (evt) => {
+                        if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
+                        const newCategories = [...allCategories];
+                        const [movedItem] = newCategories.splice(evt.oldIndex, 1);
+                        newCategories.splice(evt.newIndex, 0, movedItem);
+                        onReorderCategories(newCategories);
+                    }
+                });
+            }
         }
         
         return () => {
-            if (sortableProducts.current) sortableProducts.current.destroy();
+            sortableProductInstances.current.forEach(instance => instance.destroy());
             if (sortableCategories.current) sortableCategories.current.destroy();
         };
-    }, [activeTab, allProducts, onReorderProducts, allCategories, onReorderCategories]);
+    }, [activeTab, allCategories, allProducts, onReorderCategories, handleProductReorder]);
+    
+    const sortedCategories = useMemo(() => 
+        [...allCategories].sort((a, b) => a.order - b.order),
+    [allCategories]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -210,19 +250,30 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
                                 <h3 className="text-xl font-bold">Gerenciar Produtos</h3>
                                 <button onClick={handleAddNewProduct} className="bg-accent text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all"><i className="fas fa-plus mr-2"></i>Novo Produto</button>
                             </div>
-                            <div ref={productListRef} className="space-y-3">
-                                {allProducts.map(product => (
-                                    <div key={product.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
-                                        <div className="flex items-center gap-4">
-                                            <i className="fas fa-grip-vertical drag-handle text-gray-400" title="Arraste para reordenar"></i>
-                                            <div>
-                                                <p className="font-bold">{product.name}</p>
-                                                <p className="text-sm text-gray-500">{allCategories.find(c => c.id === product.categoryId)?.name}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleEditProduct(product)} className="bg-blue-500 text-white w-8 h-8 rounded-md hover:bg-blue-600" aria-label={`Editar ${product.name}`}><i className="fas fa-edit"></i></button>
-                                            <button onClick={() => window.confirm('Tem certeza que deseja excluir este produto?') && onDeleteProduct(product.id)} className="bg-red-500 text-white w-8 h-8 rounded-md hover:bg-red-600" aria-label={`Deletar ${product.name}`}><i className="fas fa-trash"></i></button>
+                            <div className="space-y-6">
+                                {sortedCategories.map(category => (
+                                    <div key={category.id}>
+                                        <h4 className="text-lg font-semibold mb-2 text-brand-olive-600 pb-1 border-b-2 border-brand-green-300">{category.name}</h4>
+                                        <div 
+                                            // FIX: The ref callback must not return a value. Wrapped the expression in a block.
+                                            ref={el => { productListRefs.current.set(category.id, el); }}
+                                            className="product-list space-y-3 min-h-[50px]"
+                                            data-category-id={category.id}
+                                        >
+                                            {allProducts
+                                                .filter(p => p.categoryId === category.id)
+                                                .map(product => (
+                                                    <div key={product.id} data-id={product.id} className="product-item bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+                                                        <div className="flex items-center gap-4">
+                                                            <i className="fas fa-grip-vertical drag-handle text-gray-400" title="Arraste para reordenar"></i>
+                                                            <p className="font-bold">{product.name}</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => handleEditProduct(product)} className="bg-blue-500 text-white w-8 h-8 rounded-md hover:bg-blue-600" aria-label={`Editar ${product.name}`}><i className="fas fa-edit"></i></button>
+                                                            <button onClick={() => window.confirm('Tem certeza que deseja excluir este produto?') && onDeleteProduct(product.id)} className="bg-red-500 text-white w-8 h-8 rounded-md hover:bg-red-600" aria-label={`Deletar ${product.name}`}><i className="fas fa-trash"></i></button>
+                                                        </div>
+                                                    </div>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
