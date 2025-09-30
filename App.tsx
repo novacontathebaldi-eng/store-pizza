@@ -41,8 +41,8 @@ const App: React.FC = () => {
         
         const observerOptions = {
             root: null,
-            rootMargin: '-50% 0px -50% 0px',
-            threshold: 0
+            rootMargin: '0px',
+            threshold: 0.4
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -231,6 +231,37 @@ const App: React.FC = () => {
         }
     }, []);
     
+    const handleSaveCategory = useCallback(async (category: Category) => {
+        try {
+            if (category.id) {
+                await firebaseService.updateCategory(category);
+            } else {
+                await firebaseService.addCategory({ ...category, order: categories.length });
+            }
+        } catch (error) {
+            console.error("Failed to save category:", error);
+            alert("Erro ao salvar categoria. Tente novamente.");
+        }
+    }, [categories.length]);
+    
+    const handleDeleteCategory = useCallback(async (categoryId: string) => {
+        try {
+            await firebaseService.deleteCategory(categoryId, products);
+        } catch (error) {
+            console.error("Failed to delete category:", error);
+            alert(`Erro ao deletar categoria: ${error.message}`);
+        }
+    }, [products]);
+
+    const handleReorderCategories = useCallback(async (reorderedCategories: Category[]) => {
+        try {
+            await firebaseService.reorderCategories(reorderedCategories);
+        } catch (error) {
+            console.error("Failed to reorder categories:", error);
+            alert("Erro ao reordenar categorias. Tente novamente.");
+        }
+    }, []);
+
     const cartTotalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
     return (
@@ -278,6 +309,9 @@ const App: React.FC = () => {
                     onDeleteProduct={handleDeleteProduct}
                     onStoreStatusChange={handleStoreStatusChange}
                     onReorderProducts={handleReorderProducts}
+                    onSaveCategory={handleSaveCategory}
+                    onDeleteCategory={handleDeleteCategory}
+                    onReorderCategories={handleReorderCategories}
                     onSeedDatabase={seedDatabase}
                 />
             </main>

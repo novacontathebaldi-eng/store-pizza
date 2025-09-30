@@ -8,9 +8,20 @@ interface MenuItemCardProps {
     isStoreOnline: boolean;
 }
 
+const sizeOrder = ['P', 'M', 'G', 'Única'];
+
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({ product, onAddToCart, isStoreOnline }) => {
-    const sizes = useMemo(() => Object.keys(product.prices), [product.prices]);
-    const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || '');
+    const sortedSizes = useMemo(() => {
+        return Object.keys(product.prices).sort((a, b) => {
+            const indexA = sizeOrder.indexOf(a);
+            const indexB = sizeOrder.indexOf(b);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    }, [product.prices]);
+
+    const [selectedSize, setSelectedSize] = useState<string>(sortedSizes[0] || '');
     
     const handleAddToCart = () => {
         if (!isStoreOnline || !selectedSize) return;
@@ -34,11 +45,11 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ product, onAddToCart
                 <h3 className="text-xl font-bold text-text-on-light mb-2">{product.name}</h3>
                 <p className="text-gray-600 text-sm flex-grow mb-4">{product.description}</p>
                 
-                {sizes.length > 1 && (
+                {sortedSizes.length > 1 && (
                     <div className="mb-4">
                         <p className="text-sm font-semibold mb-2 text-gray-700">Tamanhos:</p>
                         <div className="flex flex-wrap gap-2">
-                            {sizes.map(size => (
+                            {sortedSizes.map(size => (
                                 <button
                                     key={size}
                                     onClick={() => setSelectedSize(size)}

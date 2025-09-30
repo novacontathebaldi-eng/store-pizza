@@ -1,7 +1,29 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export const HeroSection: React.FC = () => {
+    const [scrollOpacity, setScrollOpacity] = useState(1);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            // A imagem começará a desaparecer após rolar um pouco e desaparecerá completamente após 400px.
+            const fadeStart = 50;
+            const fadeEnd = 400;
+            const scrollPosition = window.scrollY;
+
+            if (scrollPosition <= fadeStart) {
+                setScrollOpacity(1);
+            } else if (scrollPosition >= fadeEnd) {
+                setScrollOpacity(0);
+            } else {
+                const newOpacity = 1 - ((scrollPosition - fadeStart) / (fadeEnd - fadeStart));
+                setScrollOpacity(newOpacity);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const scrollToCardapio = () => {
         const cardapioSection = document.getElementById('cardapio');
         if (cardapioSection) {
@@ -18,7 +40,24 @@ export const HeroSection: React.FC = () => {
 
     return (
         <section id="inicio" className="bg-brand-green-700 text-text-on-dark min-h-[calc(100vh-80px)] flex items-center justify-center pb-20 px-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{backgroundImage: "url('https://www.allrecipes.com/thmb/v1_2tNBh3v8G_6a_6Y1y4s42f2E=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/20171-quick-and-easy-pizza-crust-Vilma-Ng-4x3-f3d3bfe73e3c4a6c8882b85a3b756543.jpg')"}}></div>
+            {/* Camada da Imagem de Fundo com Fade */}
+            <div 
+                className="absolute inset-0 bg-cover bg-center" 
+                style={{
+                    backgroundImage: "url('./assets/ambiente-pizzaria.webp')",
+                    opacity: scrollOpacity,
+                    transition: 'opacity 0.1s ease-out'
+                }}
+            ></div>
+            {/* Camada de Escurecimento para Contraste com Fade */}
+            <div 
+                className="absolute inset-0 bg-black/60"
+                style={{
+                    opacity: scrollOpacity,
+                    transition: 'opacity 0.1s ease-out'
+                }}
+            ></div>
+            {/* Gradiente para transição suave para a cor de fundo sólida */}
             <div className="absolute inset-0 bg-gradient-to-t from-brand-green-700 via-brand-green-700/80 to-transparent"></div>
             
             <div className="container mx-auto text-center z-10">

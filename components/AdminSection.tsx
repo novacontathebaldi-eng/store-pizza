@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, Category } from '../types';
 import { ProductModal } from './ProductModal';
+import { CategoryModal } from './CategoryModal';
 // @ts-ignore - Sortable will be a global from CDN
 import Sortable from 'sortablejs';
 
@@ -12,10 +13,18 @@ interface AdminSectionProps {
     onDeleteProduct: (productId: string) => Promise<void>;
     onStoreStatusChange: (isOnline: boolean) => Promise<void>;
     onReorderProducts: (products: Product[]) => Promise<void>;
+    onSaveCategory: (category: Category) => Promise<void>;
+    onDeleteCategory: (categoryId: string) => Promise<void>;
+    onReorderCategories: (categories: Category[]) => Promise<void>;
     onSeedDatabase: () => Promise<void>;
 }
 
-export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCategories, isStoreOnline, onSaveProduct, onDeleteProduct, onStoreStatusChange, onReorderProducts, onSeedDatabase }) => {
+export const AdminSection: React.FC<AdminSectionProps> = ({ 
+    allProducts, allCategories, isStoreOnline, 
+    onSaveProduct, onDeleteProduct, onStoreStatusChange, onReorderProducts,
+    onSaveCategory, onDeleteCategory, onReorderCategories,
+    onSeedDatabase 
+}) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeTab, setActiveTab] = useState('status');
     const [email, setEmail] = useState('');
@@ -26,8 +35,13 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
     const productListRef = useRef<HTMLDivElement>(null);
-    const sortableInstance = useRef<Sortable | null>(null);
+    const categoryListRef = useRef<HTMLDivElement>(null);
+    const sortableProducts = useRef<Sortable | null>(null);
+    const sortableCategories = useRef<Sortable | null>(null);
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -35,8 +49,6 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         };
         
         window.addEventListener('hashchange', handleHashChange, false);
-        
-        // Initial check in case the page loads with the hash
         handleHashChange();
 
         return () => {
@@ -44,38 +56,44 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         };
     }, []);
 
-    useEffect(() => {
-        if (activeTab === 'products' && productListRef.current) {
-            if (sortableInstance.current) {
-                sortableInstance.current.destroy();
+    const createSortable = (ref: React.RefObject<HTMLElement>, items: any[], onEnd: (reorderedItems: any[]) => void) => {
+        if (!ref.current) return null;
+        return Sortable.create(ref.current, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            delay: 100, // For mobile touch
+            delayOnTouchOnly: true, // For mobile touch
+            onEnd: (evt) => {
+                if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
+                
+                const newItems = [...items];
+                const [movedItem] = newItems.splice(evt.oldIndex, 1);
+                newItems.splice(evt.newIndex, 0, movedItem);
+                
+                onEnd(newItems);
             }
-            sortableInstance.current = Sortable.create(productListRef.current, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
-                onEnd: (evt) => {
-                    if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
-                    
-                    const newProducts = [...allProducts];
-                    const [movedItem] = newProducts.splice(evt.oldIndex, 1);
-                    newProducts.splice(evt.newIndex, 0, movedItem);
-                    
-                    onReorderProducts(newProducts);
-                }
-            });
+        });
+    };
+    
+    useEffect(() => {
+        if (activeTab === 'products') {
+            if (sortableProducts.current) sortableProducts.current.destroy();
+            sortableProducts.current = createSortable(productListRef, allProducts, onReorderProducts);
+        }
+        if (activeTab === 'categories') {
+            if (sortableCategories.current) sortableCategories.current.destroy();
+            sortableCategories.current = createSortable(categoryListRef, allCategories, onReorderCategories);
         }
         
         return () => {
-            if (sortableInstance.current) {
-                sortableInstance.current.destroy();
-                sortableInstance.current = null;
-            }
+            if (sortableProducts.current) sortableProducts.current.destroy();
+            if (sortableCategories.current) sortableCategories.current.destroy();
         };
-    }, [activeTab, allProducts, onReorderProducts]);
+    }, [activeTab, allProducts, onReorderProducts, allCategories, onReorderCategories]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        // Simple mock authentication
         if (email === 'admin@santa.com' && password === 'admin123') {
             setIsLoggedIn(true);
             setError('');
@@ -101,6 +119,16 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         setIsProductModalOpen(true);
     };
 
+    const handleAddNewCategory = () => {
+        setEditingCategory(null);
+        setIsCategoryModalOpen(true);
+    };
+
+    const handleEditCategory = (category: Category) => {
+        setEditingCategory(category);
+        setIsCategoryModalOpen(true);
+    };
+
     const handleSeedDatabase = async () => {
         if (window.confirm('Você tem certeza que deseja popular o banco de dados? Isso adicionará os produtos e categorias iniciais. Esta ação só deve ser feita uma vez.')) {
             try {
@@ -113,9 +141,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
         }
     };
 
-    if (!showAdminPanel) {
-        return null;
-    }
+    if (!showAdminPanel) return null;
 
     if (!isLoggedIn) {
         return (
@@ -156,7 +182,6 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                         <button onClick={() => setActiveTab('categories')} className={`py-2 px-6 font-semibold ${activeTab === 'categories' ? 'border-b-2 border-accent text-accent' : 'text-gray-500'}`}>Categorias</button>
                     </div>
 
-                    {/* Status Tab */}
                     {activeTab === 'status' && (
                         <div>
                             <h3 className="text-xl font-bold mb-4">Status da Pizzaria</h3>
@@ -169,7 +194,6 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                                     {isStoreOnline ? 'Aberta para pedidos' : 'Fechada'}
                                 </span>
                             </div>
-                            
                             <h3 className="text-xl font-bold mb-4">Ações do Banco de Dados</h3>
                              <div className="bg-gray-50 p-4 rounded-lg">
                                 <p className="text-gray-600 mb-3">Use este botão para popular o banco de dados com os produtos e categorias iniciais. Use apenas uma vez na configuração inicial.</p>
@@ -180,7 +204,6 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                         </div>
                     )}
                     
-                    {/* Products Tab */}
                     {activeTab === 'products' && (
                         <div>
                             <div className="flex justify-between items-center mb-4">
@@ -207,16 +230,23 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                         </div>
                     )}
 
-                    {/* Categories Tab */}
                     {activeTab === 'categories' && (
                         <div>
-                             <h3 className="text-xl font-bold mb-4">Gerenciar Categorias</h3>
-                             <p className="text-gray-500 mb-4">A edição de categorias será implementada em breve. Por enquanto, as categorias são gerenciadas via banco de dados.</p>
-                             <div className="space-y-3">
+                           <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold">Gerenciar Categorias</h3>
+                                <button onClick={handleAddNewCategory} className="bg-accent text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all"><i className="fas fa-plus mr-2"></i>Nova Categoria</button>
+                            </div>
+                             <div ref={categoryListRef} className="space-y-3">
                                 {allCategories.map(cat => (
-                                    <div key={cat.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                                        <p className="font-bold">{cat.name}</p>
-                                        <p className="text-sm text-gray-500">Ordem: {cat.order}</p>
+                                    <div key={cat.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+                                         <div className="flex items-center gap-4">
+                                            <i className="fas fa-grip-vertical drag-handle text-gray-400" title="Arraste para reordenar"></i>
+                                            <p className="font-bold">{cat.name}</p>
+                                         </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => handleEditCategory(cat)} className="bg-blue-500 text-white w-8 h-8 rounded-md hover:bg-blue-600" aria-label={`Editar ${cat.name}`}><i className="fas fa-edit"></i></button>
+                                            <button onClick={() => window.confirm(`Tem certeza que deseja excluir a categoria "${cat.name}"?`) && onDeleteCategory(cat.id)} className="bg-red-500 text-white w-8 h-8 rounded-md hover:bg-red-600" aria-label={`Deletar ${cat.name}`}><i className="fas fa-trash"></i></button>
+                                        </div>
                                     </div>
                                 ))}
                              </div>
@@ -231,6 +261,12 @@ export const AdminSection: React.FC<AdminSectionProps> = ({ allProducts, allCate
                 onSave={onSaveProduct}
                 product={editingProduct}
                 categories={allCategories}
+            />
+            <CategoryModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setIsCategoryModalOpen(false)}
+                onSave={onSaveCategory}
+                category={editingCategory}
             />
         </section>
     );
